@@ -29,6 +29,7 @@
 		{% endif %}
 		{% if book.withdrawn %}
 		<p><strong>Emprunté</strong>:  Oui</p>
+		<p><strong>Emprunté par</strong>:  {{ book.withdrawnBy }}</p>
 		{% else %}
 		<p><strong>Emprunté</strong>:  Non</p>
 		{% endif %}
@@ -59,11 +60,34 @@
 	<div style= "display:block; clear:both;float:none;">
 	<hr>
 			<h3><strong><u>Emprunt</strong></u></h3>
+			{% if user.isAdmin %}
 				{% if book.withdrawn %}
-<a style="border:none; margin-right:25px;" href="/return/{{book.id}}"><button>Rendre</button></a>
-		{% else %}
-<a style="border:none; margin-right:25px;" href="/withdraw/{{book.id}}"><button>Emprunter</button></a>
-		{% endif %}
+					<p>Ce livre est emprunté par <strong>{{ book.withdrawnBy }}</strong>.</p>
+					<a style="border:none; margin-right:25px;" href="/return/{{book.id}}"><button>Rendre</button></a>
+				{% else %}
+					<p>Attribuez cet exemplaire physique à un usager local au comptoir.</p>
+					{% if patrons %}
+					<form action="/withdraw/{{book.id}}" method="post" style="margin-bottom:0;">
+						<label for="borrower">Usager</label>
+						<select name="borrower" id="borrower" required>
+							<option value="" disabled selected>Choisir un usager</option>
+							{% for patron in patrons %}
+							<option value="{{ patron.username }}">{{ patron.username }}</option>
+							{% endfor %}
+						</select>
+						<input type="submit" value="Emprunter" style="margin-top:15px;">
+					</form>
+					{% else %}
+					<p>Aucun usager local. <a href="/userManagement">Ajoutez un usager</a> d'abord.</p>
+					{% endif %}
+				{% endif %}
+			{% else %}
+				{% if book.withdrawn %}
+					<p>Ce livre est emprunté par <strong>{{ book.withdrawnBy }}</strong>. Demandez à un bibliothécaire de le rendre.</p>
+				{% else %}
+					<p>Demandez à un bibliothécaire d'emprunter ce livre pour vous.</p>
+				{% endif %}
+			{% endif %}
 			
      </div>  
 	<div style= "display:block; clear:both;float:none;">

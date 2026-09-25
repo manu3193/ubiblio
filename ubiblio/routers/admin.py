@@ -308,8 +308,43 @@ async def user_management(request: Request, user: admin_user):
     context = {
         "user": user,
         "request": request,
+        "errors": [],
     }
     return templates.TemplateResponse(request, "userManagement.html", context)
+
+
+@router.post("/createLocalUser", dependencies=[get_rate_limiter(times=1, seconds=3)], response_class=HTMLResponse)
+async def create_local_user(request: Request, user: admin_user):
+    form = await request.form()
+    username = str(form.get("username") or "").strip()
+    password = str(form.get("password") or "")
+    errors = []
+    if not username:
+        errors.append("Username is required")
+    if not password or len(password) < 3:
+        errors.append("A password of at least 3 characters is required")
+    db = SessionLocal()
+    try:
+        if not errors:
+            if crud.get_user_by_username(db, username) is not None:
+                errors.append("Username already exists, please choose another.")
+            else:
+                created = crud.create_user(
+                    db,
+                    schemas.UserCreate(username=username, password=password, isAdmin=False),
+                )
+                if created is False:
+                    errors.append("Could not create the local patron.")
+                else:
+                    return RedirectResponse(url='/userManagement', status_code=status.HTTP_303_SEE_OTHER)
+        context = {
+            "user": user,
+            "request": request,
+            "errors": errors,
+        }
+        return templates.TemplateResponse(request, "userManagement.html", context)
+    finally:
+        db.close()
 
 
 @router.get("/promote/{userId}", dependencies=[get_rate_limiter(times=1, seconds=3)], response_class=HTMLResponse)

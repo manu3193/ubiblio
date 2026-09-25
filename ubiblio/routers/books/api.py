@@ -64,6 +64,7 @@ async def book_details(bookId, request: Request, user: current_user):
             "book": book,
             "user": user,
             "request": request,
+            "patrons": crud.list_local_patrons(db),
         }
         if config.coverImages:
             images = crud.getImages(db, bookId)

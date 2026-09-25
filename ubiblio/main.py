@@ -7,13 +7,17 @@ from fastapi_limiter import FastAPILimiter
 from . import models
 from .database import engine
 from .dependencies import templates
-from .vars import USE_REDIS, REDIS_URL
+from .vars import LOCAL_ONLY, USE_REDIS, REDIS_URL
 
 from .routers import auth, books, reading_lists, files, admin, federation
 
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(
+    docs_url=None if LOCAL_ONLY else "/docs",
+    redoc_url=None if LOCAL_ONLY else "/redoc",
+    openapi_url=None if LOCAL_ONLY else "/openapi.json",
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -52,4 +56,5 @@ app.include_router(auth.router)
 app.include_router(books.router)
 app.include_router(reading_lists.router)
 app.include_router(files.router)
-app.include_router(federation.router)
+if not LOCAL_ONLY:
+    app.include_router(federation.router)

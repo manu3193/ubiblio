@@ -23,7 +23,10 @@
         <p><strong>ISBN</strong>:  {{ book.ISBN}}</p>
 		<p><strong>Notes</strong>:  {{book.notes}}</p>
 		<p><strong>Owned</strong>:  {{ book.owned}}</p>
-		<p><strong>Withdrawn</strong>:  {{ book.withdrawn}}</p>
+		<p><strong>On loan</strong>:  {{ book.withdrawn}}</p>
+		{% if book.withdrawn %}
+		<p><strong>Borrowed by</strong>:  {{ book.withdrawnBy }}</p>
+		{% endif %}
 			{% if config.customFieldName1|length > 0 %}	
 <p><strong>{{config.customFieldName1}}</strong>:  {{book.customField1}}</p>
 	{% endif %}
@@ -51,11 +54,34 @@
 	<div style= "display:block; clear:both;float:none;">
 	<hr>
 			<h3><strong><u>Checkout</strong></u></h3>
-						{% if book.withdrawn %}
-<a style="border:none; margin-right:25px;" href="/return/{{book.id}}"><button>Return</button></a>
-		{% else %}
-<a style="border:none; margin-right:25px;" href="/withdraw/{{book.id}}"><button>Withdraw</button></a>
-		{% endif %}
+			{% if user.isAdmin %}
+				{% if book.withdrawn %}
+					<p>This book is on loan to <strong>{{ book.withdrawnBy }}</strong>.</p>
+					<a style="border:none; margin-right:25px;" href="/return/{{book.id}}"><button>Return</button></a>
+				{% else %}
+					<p>Assign this physical copy to a local patron at the desk.</p>
+					{% if patrons %}
+					<form action="/withdraw/{{book.id}}" method="post" style="margin-bottom:0;">
+						<label for="borrower">Patron</label>
+						<select name="borrower" id="borrower" required>
+							<option value="" disabled selected>Select a patron</option>
+							{% for patron in patrons %}
+							<option value="{{ patron.username }}">{{ patron.username }}</option>
+							{% endfor %}
+						</select>
+						<input type="submit" value="Check out" style="margin-top:15px;">
+					</form>
+					{% else %}
+					<p>No local patrons yet. <a href="/userManagement">Add a patron</a> first.</p>
+					{% endif %}
+				{% endif %}
+			{% else %}
+				{% if book.withdrawn %}
+					<p>This book is on loan to <strong>{{ book.withdrawnBy }}</strong>. Ask a librarian to return it.</p>
+				{% else %}
+					<p>Ask a librarian to check this book out for you.</p>
+				{% endif %}
+			{% endif %}
 			
      </div>  
 	<div style= "display:block; clear:both;float:none;">

@@ -11,7 +11,8 @@
 {% endfor %}
   <!-- Search Input-->
 		
-<h2 style="margin-top:25px; margin-bottom:15px;">Book List</h2>
+<h2 style="margin-top:25px; margin-bottom:15px;">On Loan</h2>
+<p>Physical copies currently borrowed by local patrons. Return them here when they come back to the desk.</p>
 
 <div class="container">  
   <table>
@@ -19,16 +20,26 @@
       <tr>
         <th>Title</th>
         <th>Author</th>
-        <th>Withdrawn By</th>
+        <th>Borrowed by</th>
+        {% if user.isAdmin %}
+        <th>Actions</th>
+        {% endif %}
       </tr>
     </thead>
     <tbody id = "tablebody">
 {% if books|length > 0 %}
 	{% for book in books %}
-		<tr><td><a href="/bookDetails/{{ book.id }}">{{ book.title }}</a></td><td>{{ book.author }}</td><td>{{ book.withdrawnBy }}</td></tr>
+		<tr>
+            <td><a href="/bookDetails/{{ book.id }}">{{ book.title }}</a></td>
+            <td>{{ book.author }}</td>
+            <td>{{ book.withdrawnBy }}</td>
+            {% if user.isAdmin %}
+            <td><a href="/return/{{ book.id }}">Return</a></td>
+            {% endif %}
+        </tr>
 	{% endfor %}
 {% else %}
-		<tr><td>No withdrawn books</td><td></td><td></td></tr>
+		<tr><td>No books on loan</td><td></td><td></td></tr>
 {% endif %}
     </tbody>
   </table>

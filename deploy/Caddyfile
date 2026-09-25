@@ -1,0 +1,17 @@
+{
+	admin off
+	auto_https disable_redirects
+}
+
+https://ubiblio.home {
+	tls internal
+	encode gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		Referrer-Policy same-origin
+		X-Frame-Options DENY
+		-Server
+	}
+	reverse_proxy ubiblio:8000
+}

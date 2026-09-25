@@ -34,7 +34,13 @@ async def login_post(request: Request):
 @router.get("/auth/logout", response_class=HTMLResponse)
 def logout():
     response = RedirectResponse(url="/")
-    response.delete_cookie(settings.COOKIE_NAME)
+    response.delete_cookie(
+        settings.COOKIE_NAME,
+        path="/",
+        secure=settings.COOKIE_SECURE,
+        httponly=True,
+        samesite="lax",
+    )
     return response
 
 

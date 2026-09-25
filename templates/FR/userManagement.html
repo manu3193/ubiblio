@@ -6,16 +6,28 @@
 	<section id="two">
 		<div class="inner" style = "padding: 20px 0 1em 0;">
 
-<h1>Gérer les Utilisateurs de la Bibliothèque</h1>
+<h1>Gérer les usagers de la bibliothèque</h1>
+
+<p>Usagers locaux uniquement. Quand quelqu'un se présente au comptoir, créez-le ici, puis attribuez-lui des livres depuis la fiche du livre.</p>
 
 {% for error in errors %}
     <p style="color: red">{{ error }}</p>
 {% endfor %}
+
+<h2 style="margin-top:10px; margin-bottom:15px;">Ajouter un usager local</h2>
+<form action="/createLocalUser" method="post" style="margin-bottom:25px;">
+  <p><label for="username">Nom d'utilisateur</label></p>
+  <input type="text" id="username" name="username" required>
+  <p><label for="password">Mot de passe</label></p>
+  <input type="password" id="password" name="password" required>
+  <input type="submit" value="Ajouter l'usager">
+</form>
+
 <form style = "margin-bottom:0px;" onsubmit="search(0);return false;">
   <input type="text" id = "searchboxInput" name="searchboxInput" value="" />
   <input style ="float:left;" type="submit" value="Search">										
 </form>
-<a style ='text-decoration:none !important; border:none;margin-left:25px;' href="/newUserCode"><button style="margin-bottom:25px;">Créer un Nouveau Compte</button></a>
+<a style ='text-decoration:none !important; border:none;margin-left:25px;' href="/newUserCode"><button style="margin-bottom:25px;">Inviter par lien</button></a>
 <h2 style="margin-top:25px; margin-bottom:15px;">Liste d'Utilisateurs</h2>
 
 <div class="container">  
@@ -23,7 +35,7 @@
     <thead class="visible@l">
       <tr>
         <th>Nom</th>
-        <th>Admin</th>
+        <th>Rôle</th>
 		<th>Actions</th>  
       </tr>
     </thead>
@@ -59,7 +71,7 @@ $.post(searchEndpoint,function(data, status){
     $("#tablebody").empty();
     $("#pagination").empty();
     itemdata.forEach(function(item) {
-    $("#tablebody").append('<tr><td>'+item.username+'</td><td>'+item.isAdmin+'</td><td><a href= /promote/'+item.id+'>Changer en Admin</a>&nbsp;&nbsp;<a href=/demote/'+item.id+'>Retirer Droits Admin</a>&nbsp;&nbsp;<a href="/deleteUser/'+item.id+'" onclick="return confirm(&#39;Êtes-vous sûr?&#39;);">Supprimer</a></td></tr>');
+    $("#tablebody").append('<tr><td>'+item.username+'</td><td>'+(item.isAdmin ? 'Admin' : 'Usager')+'</td><td><a href= /promote/'+item.id+'>Changer en Admin</a>&nbsp;&nbsp;<a href=/demote/'+item.id+'>Changer en usager</a>&nbsp;&nbsp;<a href="/deleteUser/'+item.id+'" onclick="return confirm(&#39;Êtes-vous sûr?&#39;);">Supprimer</a></td></tr>');
 });
 
 if (itemdata.length === 0){

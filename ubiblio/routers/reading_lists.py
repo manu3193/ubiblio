@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Form, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from .. import crud, schemas
 from ..database import SessionLocal
 from ..dependencies import (
     get_rate_limiter, templates,
-    current_user,
+    admin_user, current_user,
 )
 
 router = APIRouter()
@@ -48,39 +48,50 @@ async def reading_list(request: Request, user: current_user):
     return templates.TemplateResponse(request, "readinglist.html", context)
 
 
+def _book_schema(book, withdrawn: bool, withdrawn_by: str | None = None) -> schemas.Book:
+    return schemas.Book(
+        id=book.id, title=book.title, author=book.author, summary=book.summary,
+        genre=book.genre, library=book.library, shelf=book.shelf, collection=book.collection,
+        notes=book.notes, ISBN=book.ISBN, owned=book.owned, ebook=book.ebook,
+        customField1=book.customField1, customField2=book.customField2,
+        withdrawn=withdrawn, withdrawnBy=withdrawn_by,
+    )
+
+
 @router.get("/return/{bookId}", dependencies=[get_rate_limiter(times=1, seconds=1)], response_class=HTMLResponse)
-async def book_return(bookId, request: Request, user: current_user):
+async def book_return(bookId, request: Request, user: admin_user):
     db = SessionLocal()
     try:
         book = crud.getBookById(db, bookId)
-        book = schemas.Book(
-            id=bookId, title=book.title, author=book.author, summary=book.summary,
-            genre=book.genre, library=book.library, shelf=book.shelf, collection=book.collection,
-            notes=book.notes, ISBN=book.ISBN, owned=book.owned, ebook=book.ebook,
-            customField1=book.customField1, customField2=book.customField2, withdrawn=False,
-        )
-        crud.bookReturn(db, book)
+        if book:
+            crud.bookReturn(db, _book_schema(book, withdrawn=False, withdrawn_by=None))
     finally:
         db.close()
-    return RedirectResponse(url='/searchbooks')
+    return RedirectResponse(url='/withdrawn')
 
 
 @router.get("/withdraw/{bookId}", dependencies=[get_rate_limiter(times=1, seconds=1)], response_class=HTMLResponse)
-async def book_withdraw(bookId, request: Request, user: current_user):
+async def book_withdraw_get(bookId, request: Request, user: admin_user):
+    return RedirectResponse(url=f'/bookDetails/{bookId}')
+
+
+@router.post("/withdraw/{bookId}", dependencies=[get_rate_limiter(times=1, seconds=1)], response_class=HTMLResponse)
+async def book_withdraw(bookId, request: Request, user: admin_user, borrower: str = Form(...)):
+    borrower = (borrower or "").strip()
     db = SessionLocal()
     try:
         book = crud.getBookById(db, bookId)
-        book = schemas.Book(
-            id=bookId, title=book.title, author=book.author, summary=book.summary,
-            genre=book.genre, library=book.library, shelf=book.shelf, collection=book.collection,
-            notes=book.notes, ISBN=book.ISBN, owned=book.owned, ebook=book.ebook,
-            withdrawnBy=user.username, customField1=book.customField1,
-            customField2=book.customField2, withdrawn=True,
-        )
-        crud.bookWithdraw(db, book)
+        if not book:
+            return RedirectResponse(url='/searchbooks', status_code=status.HTTP_303_SEE_OTHER)
+        if book.withdrawn:
+            return RedirectResponse(url=f'/bookDetails/{bookId}', status_code=status.HTTP_303_SEE_OTHER)
+        patron = crud.get_user_by_username(db, borrower)
+        if not patron:
+            return RedirectResponse(url=f'/bookDetails/{bookId}', status_code=status.HTTP_303_SEE_OTHER)
+        crud.bookWithdraw(db, _book_schema(book, withdrawn=True, withdrawn_by=patron.username))
     finally:
         db.close()
-    return RedirectResponse(url='/searchbooks')
+    return RedirectResponse(url='/withdrawn', status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.get("/withdrawn", dependencies=[get_rate_limiter(times=2, seconds=2)], response_class=HTMLResponse)

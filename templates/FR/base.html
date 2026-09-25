@@ -39,12 +39,12 @@
 						<nav id="menu">
 							<ul class="links">
 							<li><a href="/">Recherche de livre</a></li>
-							<li><a href="/fedsearch">Recherche avancée</a></li>
 							<li><a href="/genre/">Parcourir par genres</a></li>
 								<li><a href="/wishlist/">Liste de souhaits</a></li>
 							<li><a href="/readingLists">Listes de lecture</a></li>
 								<li><a href="/withdrawn">Livres empruntés</a></li>
 								{% if user.isAdmin %}
+								<li><a href="/userManagement">Usagers</a></li>
 								<li><a href="/config">Configuration</a></li>
 								{% endif %}
 						</ul>

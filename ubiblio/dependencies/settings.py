@@ -2,7 +2,7 @@ from fastapi.templating import Jinja2Templates
 from rich import print
 from rich.console import Console
 
-from ..vars import SECRET_KEY, TOKEN_TTL, LANGUAGE
+from ..vars import COOKIE_SECURE, SECRET_KEY, TOKEN_TTL, LANGUAGE
 
 console = Console()
 
@@ -12,6 +12,7 @@ class Settings:
     ALGORITHM = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES = TOKEN_TTL
     COOKIE_NAME = "access_token"
+    COOKIE_SECURE = COOKIE_SECURE
 
 
 settings = Settings()

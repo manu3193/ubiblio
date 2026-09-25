@@ -7,6 +7,8 @@ DB_LOCATION = os.environ.get("DB_LOCATION", "./sql_app.db")
 
 USE_REDIS = os.environ.get("USE_REDIS", "true").lower() == "true"
 REDIS_URL = os.environ.get("REDIS_URI", "redis://localhost")
+LOCAL_ONLY = os.environ.get("LOCAL_ONLY", "false").lower() == "true"
+COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "false").lower() == "true"
 
 LANGUAGE = os.environ.get("LANGUAGE", "")
 GOOGLE_BOOKS_API_KEY = os.environ.get("GB_API", "")

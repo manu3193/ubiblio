@@ -8,21 +8,33 @@
 
 <h1>Manage Library Users</h1>
 
+<p>Local patrons only. When someone comes to the library, add them here, then check books out to them from the book page.</p>
+
 {% for error in errors %}
     <p style="color: red">{{ error }}</p>
 {% endfor %}
+
+<h2 style="margin-top:10px; margin-bottom:15px;">Add local patron</h2>
+<form action="/createLocalUser" method="post" style="margin-bottom:25px;">
+  <p><label for="username">Username</label></p>
+  <input type="text" id="username" name="username" required>
+  <p><label for="password">Password</label></p>
+  <input type="password" id="password" name="password" required>
+  <input type="submit" value="Add patron">
+</form>
+
 <form style = "margin-bottom:0px;" onsubmit="search(0);return false;">
   <input type="text" id = "searchboxInput" name="searchboxInput" value="" />
   <input style ="float:left;" type="submit" value="Search">										
 </form>
-<a style ='text-decoration:none !important; border:none;margin-left:25px;' href="/newUserCode"><button style="margin-bottom:25px;">Add New User</button></a>
+<a style ='text-decoration:none !important; border:none;margin-left:25px;' href="/newUserCode"><button style="margin-bottom:25px;">Invite via link</button></a>
 <h2 style="margin-top:25px; margin-bottom:15px;">User List</h2>
 <div class="container">  
   <table>
     <thead class="visible@l">
       <tr>
         <th>Username</th>
-        <th>IsAdmin</th>
+        <th>Role</th>
 		<th>Actions</th>  
       </tr>
     </thead>
@@ -57,7 +69,7 @@ $.post(searchEndpoint,function(data, status){
     $("#tablebody").empty();
     $("#pagination").empty();
     itemdata.forEach(function(item) {
-    $("#tablebody").append('<tr><td>'+item.username+'</td><td>'+item.isAdmin+'</td><td><a href= /promote/'+item.id+'>Set to Admin</a>&nbsp;&nbsp;<a href=/demote/'+item.id+'>Set to User</a>&nbsp;&nbsp;<a href="/deleteUser/'+item.id+'" onclick="return confirm(&#39;Are you sure?&#39;);">Delete</a></td></tr>');
+    $("#tablebody").append('<tr><td>'+item.username+'</td><td>'+(item.isAdmin ? 'Admin' : 'Patron')+'</td><td><a href= /promote/'+item.id+'>Set to Admin</a>&nbsp;&nbsp;<a href=/demote/'+item.id+'>Set to Patron</a>&nbsp;&nbsp;<a href="/deleteUser/'+item.id+'" onclick="return confirm(&#39;Are you sure?&#39;);">Delete</a></td></tr>');
 });
 
 if (itemdata.length === 0){

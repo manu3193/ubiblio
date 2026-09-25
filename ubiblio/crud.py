@@ -21,6 +21,12 @@ def get_user_by_username(db: Session, username: str):
 def get_users(db: Session, skip: int = 0, limit: int = 50):
     return db.query(models.User).offset(skip).limit(limit).all()
 
+def list_library_users(db: Session):
+    return db.query(models.User).order_by(models.User.username.asc()).all()
+
+def list_local_patrons(db: Session):
+    return db.query(models.User).filter(models.User.isAdmin == False).order_by(models.User.username.asc()).all()
+
 def create_user(db: Session, user: schemas.UserCreate):
     try:
         passhash = crypto.hash(str(user.password))
