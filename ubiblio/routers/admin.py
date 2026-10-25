@@ -18,6 +18,7 @@ from ..dependencies import (
     current_user, admin_user, get_body,
     configForm, get_current_user_from_cookie,
 )
+from ..security import archive_stays_inside, contained_file
 from ..vars import DB_LOCATION
 
 router = APIRouter()
@@ -175,24 +176,34 @@ async def backups_page(request: Request, user: admin_user):
         return "Could not list database backups."
 
 
+def _export_file(filename: str):
+    path = contained_file("export", filename)
+    if path and os.path.isfile(path):
+        return path
+    return None
+
+
 @router.get("/restoreBackup/{filename}", dependencies=[get_rate_limiter(times=1, seconds=10)], response_class=HTMLResponse)
 async def restore_db(filename, request: Request, user: admin_user):
     try:
-        path = 'export/' + filename
-        if os.path.isfile(path):
+        path = _export_file(filename)
+        if path:
             crud.wipeAndRestore(path)
             return RedirectResponse(url='/')
+        return "Restore failed."
     except Exception as e:
         print(e)
+        return "Restore failed."
 
 
 @router.get("/deleteBackup/{filename}", dependencies=[get_rate_limiter(times=1, seconds=10)], response_class=HTMLResponse)
 async def delete_backup(filename, request: Request, user: admin_user):
     try:
-        path = 'export/' + filename
-        if os.path.isfile(path):
+        path = _export_file(filename)
+        if path:
             os.remove(path)
             return RedirectResponse(url='/backups')
+        return "Delete backup failed."
     except Exception as e:
         print(e)
         return "Delete backup failed. There may be a file permissions issue."
@@ -201,10 +212,11 @@ async def delete_backup(filename, request: Request, user: admin_user):
 @router.get("/addByCSV/{filename}", dependencies=[get_rate_limiter(times=1, seconds=10)], response_class=HTMLResponse)
 async def add_csv(filename, request: Request, user: admin_user):
     try:
-        path = 'export/' + filename
-        if os.path.isfile(path):
+        path = _export_file(filename)
+        if path:
             crud.addCSV(path)
             return RedirectResponse(url='/searchbooks')
+        return "Error adding books -- check the search page to see what was added."
     except Exception as e:
         print(e)
         return "Error adding books -- check the search page to see what was added."
@@ -213,10 +225,12 @@ async def add_csv(filename, request: Request, user: admin_user):
 @router.get("/downloadBackup/{filename}", dependencies=[get_rate_limiter(times=1, seconds=10)], response_class=HTMLResponse)
 async def download_backup(filename, request: Request, user: admin_user):
     try:
-        path = 'export/' + filename
-        return FileResponse(path, media_type='application/octet-stream', filename=filename)
-    except Exception as e:
-        return "File download failed (Exception: " + str(e) + ")"
+        path = _export_file(filename)
+        if not path:
+            return "File download failed."
+        return FileResponse(path, media_type='application/octet-stream', filename=os.path.basename(path))
+    except Exception:
+        return "File download failed."
 
 
 @router.post("/uploadBackup/")
@@ -251,7 +265,10 @@ async def file_backup(request: Request, user: admin_user):
 @router.get("/restoreFileBackup/{filename}", dependencies=[get_rate_limiter(times=1, seconds=10)], response_class=HTMLResponse)
 async def restore_files(filename, request: Request, user: admin_user):
     try:
-        shutil.unpack_archive("export/" + filename, "static", "zip")
+        path = _export_file(filename)
+        if not path or not archive_stays_inside(path, "static"):
+            return "File restore failed."
+        shutil.unpack_archive(path, "static", "zip")
         return RedirectResponse(url='/')
     except Exception as e:
         print(e)
@@ -422,7 +439,7 @@ async def create_local_user(request: Request, user: admin_user):
     try:
         self_service = crud.patron_self_service_enabled(db)
         if self_service and given_name and (not password or len(password) < 3):
-            errors.append("Con el acceso en línea activo, la contraseña debe tener al menos 3 caracteres")
+            errors.append("Con el acceso en línea activo, la contraseña debe tener al menos 8 caracteres")
         if not errors and given_name:
             username = _slug_username(given_name, surname1, surname2)
             base = username
@@ -434,8 +451,8 @@ async def create_local_user(request: Request, user: admin_user):
             errors.append("Ese usuario ya existe")
         if not errors and not password:
             password = secrets.token_urlsafe(16)
-        if not errors and len(password) < 3:
-            errors.append("La contraseña debe tener al menos 3 caracteres")
+        if not errors and len(password) < 8:
+            errors.append("La contraseña debe tener al menos 8 caracteres")
         if not errors:
             created = crud.create_user(
                 db,

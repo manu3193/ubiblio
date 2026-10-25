@@ -60,7 +60,7 @@
     </thead>
 			<tbody id = "tablebody">
 {% for file in ebookFiles %}
-				<tr><td><strong>{{ file.filename }}</strong></td><td><strong><a class="confirm" style="border:none;" href="/downloadEbook/{{ file.filename }}" >Download</a></strong>  |  <strong><a class="confirm" style="border:none;" href="/deleteEbook/{{ file.id }}" onclick="if (!confirm('This will delete this book export. Are you sure?')) return false;">Delete</a></strong></td>
+				<tr><td><strong>{{ file.filename }}</strong></td><td><strong><a class="confirm" style="border:none;" href="/downloadEbook/{{ file.filename }}" >Download</a></strong>  |  <strong><a class="confirm" style="border:none;" href="/deleteEbook/{{ file.id }}?csrf_token={{ csrf_token }}" onclick="if (!confirm('This will delete this book export. Are you sure?')) return false;">Delete</a></strong></td>
 		
 		{% endfor %}
 						 </tbody>
@@ -100,7 +100,7 @@
 			<button class="accordion" style="margin-top:40px;">Admin Actions</button>
 			<div class="panel">
 			<a style="border:none; margin-right:25px;margin-right:25px;" href="/update_book/{{book.id}}"><button>Update</button></a>
-			<a class="confirm" style="border:none;" href="/delete_book/{{book.id}}" onclick="if (!confirm('Are you sure?')) return false;"><button style="margin-top:30px;">Delete</button></a>
+			<a class="confirm" style="border:none;" href="/delete_book/{{book.id}}?csrf_token={{ csrf_token }}" onclick="if (!confirm('Are you sure?')) return false;"><button style="margin-top:30px;">Delete</button></a>
 		    					<div style ="clear:both; display:block; float:none; margin-top: 20px;">
 <form action="/uploadEbook/{{ book.id }}" method="post" enctype="multipart/form-data">
         <!-- File input field -->

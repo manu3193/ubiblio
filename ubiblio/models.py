@@ -1,5 +1,6 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, event
 from sqlalchemy.orm import relationship
+from sqlalchemy.orm.attributes import set_committed_value
 from .database import Base
 from sqlalchemy.sql import func
 
@@ -24,6 +25,26 @@ class User(Base):
         parts = [self.givenName, self.surname1, self.surname2]
         name = " ".join(part for part in parts if part)
         return name or self.username
+
+
+from .field_crypto import ENCRYPTED_USER_FIELDS, decrypt_value, encrypt_value, is_ciphertext
+
+
+@event.listens_for(User, "load")
+def _decrypt_user_pii(target, context):
+    for name in ENCRYPTED_USER_FIELDS:
+        value = getattr(target, name)
+        if is_ciphertext(value):
+            set_committed_value(target, name, decrypt_value(value))
+
+
+@event.listens_for(User, "before_insert")
+@event.listens_for(User, "before_update")
+def _encrypt_user_pii(mapper, connection, target):
+    for name in ENCRYPTED_USER_FIELDS:
+        value = getattr(target, name)
+        if value and not is_ciphertext(value):
+            setattr(target, name, encrypt_value(value))
 
 class Book(Base):
     __tablename__ = "books"

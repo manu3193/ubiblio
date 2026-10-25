@@ -7,6 +7,7 @@ from fastapi_limiter import FastAPILimiter
 from . import crud, models
 from .database import engine
 from .dependencies import templates
+from .security import CSRFMiddleware, is_state_changing_get
 from .vars import LOCAL_ONLY, USE_REDIS, REDIS_URL
 
 from .routers import auth, books, reading_lists, files, admin, federation
@@ -27,11 +28,12 @@ app.add_middleware(
     allow_methods=['POST'],
     allow_headers=['*']
 )
+app.add_middleware(CSRFMiddleware)
 
 
 @app.middleware("http")
 async def head_as_get(request: Request, call_next):
-    if request.method != "HEAD":
+    if request.method != "HEAD" or is_state_changing_get(request.url.path):
         return await call_next(request)
     request.scope["method"] = "GET"
     response = await call_next(request)

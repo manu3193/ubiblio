@@ -58,7 +58,7 @@
 					<p>Ejemplares prestados:</p>
 					<ul>
 					{% for loan in loans %}
-						<li>{{ loan.username }} — <a href="/returnLoan/{{ loan.id }}">Devolver esta copia</a></li>
+						<li>{{ loan.username }} — <a href="/returnLoan/{{ loan.id }}?csrf_token={{ csrf_token }}">Devolver esta copia</a></li>
 					{% endfor %}
 					</ul>
 				{% endif %}
@@ -84,7 +84,7 @@
 			{% elif config.patronSelfService %}
 				{% if book.withdrawn and book.withdrawnBy == user.username %}
 					<p>Usted tiene este libro en préstamo.</p>
-					<a style="border:none; margin-right:25px;" href="/return/{{book.id}}"><button>Devolver</button></a>
+					<a style="border:none; margin-right:25px;" href="/return/{{book.id}}?csrf_token={{ csrf_token }}"><button>Devolver</button></a>
 				{% elif not book.withdrawn %}
 					<form action="/withdraw/{{book.id}}" method="post">
 						<input type="hidden" name="borrower" value="{{ user.username }}">
@@ -115,7 +115,7 @@
 			<button class="accordion" style="margin-top:40px;">Acciones de administración</button>
 			<div class="panel">
 			<a style="border:none; margin-right:25px;margin-right:25px;" href="/update_book/{{book.id}}"><button>Actualizar</button></a>
-			<a class="confirm" style="border:none;" href="/delete_book/{{book.id}}" onclick="if (!confirm('¿Confirma que desea eliminarlo?')) return false;"><button style="margin-top:30px;">Eliminar</button></a>
+			<a class="confirm" style="border:none;" href="/delete_book/{{book.id}}?csrf_token={{ csrf_token }}" onclick="if (!confirm('¿Confirma que desea eliminarlo?')) return false;"><button style="margin-top:30px;">Eliminar</button></a>
 		    	{% if config.coverImages %}	
 		
 				

@@ -30,7 +30,7 @@
 		<tr>
 			<td>{{ vkey.url }}</td>
 			<td>{{ vkey.vkey[0:12] }}...</td>
-			<td><a href="/deleteVkey/{{ vkey.id }}" onclick="if (!confirm('Are you sure?')) return false;">Delete</a>&nbsp;&nbsp;&nbsp;<a href="#" onclick="getPubkey('{{ vkey.url }}','{{ vkey.id }}');">Refresh</a></td>
+			<td><a href="/deleteVkey/{{ vkey.id }}?csrf_token={{ csrf_token }}" onclick="if (!confirm('Are you sure?')) return false;">Delete</a>&nbsp;&nbsp;&nbsp;<a href="#" onclick="getPubkey('{{ vkey.url }}','{{ vkey.id }}');">Refresh</a></td>
 		</tr>
 {% endfor %}
 {% else %}

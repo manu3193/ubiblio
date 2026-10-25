@@ -20,8 +20,8 @@ class LoginForm:
     async def is_valid(self):
         if not self.username:
             self.errors.append("Escriba el usuario")
-        if not self.password or not len(self.password) >= 3:
-            self.errors.append("La contraseña debe tener al menos 3 caracteres")
+        if not self.password or len(self.password) < 8:
+            self.errors.append("La contraseña debe tener al menos 8 caracteres")
         if not self.errors:
             return True
         return False
@@ -44,8 +44,8 @@ class newUserForm:
     async def is_valid(self):
         if not self.username:
             self.errors.append("Please enter your username")
-        if not self.password or not len(self.password) >= 3:
-            self.errors.append("A valid password over 3 characters is required")
+        if not self.password or len(self.password) < 8:
+            self.errors.append("A valid password of at least 8 characters is required")
         if not self.accessCode:
             self.errors.append("Something went wrong with your access link. Reload this page, or contact your library admin.")
         if not self.errors:

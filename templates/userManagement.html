@@ -96,7 +96,8 @@ $.post(searchEndpoint,function(data, status){
     $("#tablebody").empty();
     $("#pagination").empty();
     itemdata.forEach(function(item) {
-    $("#tablebody").append('<tr><td>'+item.displayName+'</td><td>'+item.phone+'</td><td>'+item.email+'</td><td>'+item.canton+'</td><td>'+(item.isAdmin ? 'Administración' : '<a href="/deleteUser/'+item.id+'" onclick="return confirm(&#39;¿Eliminar a esta persona?&#39;);">Eliminar</a>')+'</td></tr>');
+    var csrf = document.querySelector('meta[name="csrf-token"]').content;
+    $("#tablebody").append('<tr><td>'+item.displayName+'</td><td>'+item.phone+'</td><td>'+item.email+'</td><td>'+item.canton+'</td><td>'+(item.isAdmin ? 'Administración' : '<a href="/deleteUser/'+item.id+'?csrf_token='+encodeURIComponent(csrf)+'" onclick="return confirm(&#39;¿Eliminar a esta persona?&#39;);">Eliminar</a>')+'</td></tr>');
 });
 
 if (itemdata.length === 0){

@@ -23,7 +23,7 @@
     </thead>
     <tbody id = "tablebody">	
 		{% for backup in backups %}
-		<tr><td>{{ backup }}</td><td><a class="confirm" style="border:none;" href="/restoreBackup/{{ backup }}" onclick="if (!confirm('This will delete the current DB and replace it with the backup. Are you sure?')) return false;">Restore</a> | <a class="confirm" style="border:none;" href="/deleteBackup/{{ backup }}" onclick="if (!confirm('This will delete this backup. Are you sure?')) return false;">Delete</a> | <a class="confirm" style="border:none;" href="/downloadBackup/{{ backup }}" >Download</a></td>
+		<tr><td>{{ backup }}</td><td><a class="confirm" style="border:none;" href="/restoreBackup/{{ backup }}?csrf_token={{ csrf_token }}" onclick="if (!confirm('This will delete the current DB and replace it with the backup. Are you sure?')) return false;">Restore</a> | <a class="confirm" style="border:none;" href="/deleteBackup/{{ backup }}?csrf_token={{ csrf_token }}" onclick="if (!confirm('This will delete this backup. Are you sure?')) return false;">Delete</a> | <a class="confirm" style="border:none;" href="/downloadBackup/{{ backup }}" >Download</a></td>
 	
 {% endfor %}	
 			 </tbody>
@@ -45,7 +45,7 @@
     </thead>
     <tbody id = "tablebody">	
 		{% for fileExport in fileExports %}
-		<tr><td>{{ fileExport }}</td><td><a class="confirm" style="border:none;" href="/restoreFileBackup/{{ fileExport }}" onclick="if (!confirm('This will delete the current DB and replace it with the backup. Are you sure?')) return false;">Restore</a> | <a class="confirm" style="border:none;" href="/deleteBackup/{{ fileExport }}" onclick="if (!confirm('This will delete this backup. Are you sure?')) return false;">Delete</a> | <a class="confirm" style="border:none;" href="/downloadBackup/{{ fileExport }}" >Download</a></td>
+		<tr><td>{{ fileExport }}</td><td><a class="confirm" style="border:none;" href="/restoreFileBackup/{{ fileExport }}?csrf_token={{ csrf_token }}" onclick="if (!confirm('This will delete the current DB and replace it with the backup. Are you sure?')) return false;">Restore</a> | <a class="confirm" style="border:none;" href="/deleteBackup/{{ fileExport }}?csrf_token={{ csrf_token }}" onclick="if (!confirm('This will delete this backup. Are you sure?')) return false;">Delete</a> | <a class="confirm" style="border:none;" href="/downloadBackup/{{ fileExport }}" >Download</a></td>
 	
 {% endfor %}	
 			 </tbody>
@@ -67,7 +67,7 @@
     </thead>
     <tbody id = "tablebody">	
 		{% for bookexport in bookExports %}
-		<tr><td>{{ bookexport }}</td><td><a class="confirm" style="border:none;" href="/addByCSV/{{ bookexport }}" onclick="if (!confirm('This will add the books in this file to the database. Are you sure?')) return false;">Add to DB</a> | <a class="confirm" style="border:none;" href="/deleteBackup/{{ bookexport }}" onclick="if (!confirm('This will delete this book export. Are you sure?')) return false;">Delete</a> | <a class="confirm" style="border:none;" href="/downloadBackup/{{ bookexport }}" >Download</a></td>
+		<tr><td>{{ bookexport }}</td><td><a class="confirm" style="border:none;" href="/addByCSV/{{ bookexport }}?csrf_token={{ csrf_token }}" onclick="if (!confirm('This will add the books in this file to the database. Are you sure?')) return false;">Add to DB</a> | <a class="confirm" style="border:none;" href="/deleteBackup/{{ bookexport }}?csrf_token={{ csrf_token }}" onclick="if (!confirm('This will delete this book export. Are you sure?')) return false;">Delete</a> | <a class="confirm" style="border:none;" href="/downloadBackup/{{ bookexport }}" >Download</a></td>
 	
 {% endfor %}	
 			 </tbody>

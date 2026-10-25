@@ -15,6 +15,7 @@ from ..dependencies import (
     get_current_user_from_token,
     get_rate_limiter,
 )
+from ..security import contained_file
 
 router = APIRouter()
 
@@ -70,12 +71,12 @@ def delete_image(request: Request, imageId: int, user: admin_user):
     try:
         db = SessionLocal()
         bookId, dbpath = crud.deleteImage(db, imageId)
-        jpgPath = os.path.join(
-            './static/bookImages/', str(dbpath) + ".jpg")
-        thumbPath = os.path.join(
-            './static/bookImages/', str(dbpath) + "_thumbnail.jpg")
-        os.remove(thumbPath)
-        os.remove(jpgPath)
+        jpg_path = contained_file("static/bookImages", str(dbpath) + ".jpg")
+        thumb_path = contained_file("static/bookImages", str(dbpath) + "_thumbnail.jpg")
+        if thumb_path and os.path.isfile(thumb_path):
+            os.remove(thumb_path)
+        if jpg_path and os.path.isfile(jpg_path):
+            os.remove(jpg_path)
         return RedirectResponse(url='/bookDetails/' + str(bookId), status_code=status.HTTP_303_SEE_OTHER)
     except Exception as e:
         print(e)
@@ -90,11 +91,9 @@ def delete_image(request: Request, imageId: int, user: admin_user):
 @router.get("/downloadEbook/{filename}", dependencies=[get_rate_limiter(times=2, seconds=1)], response_class=HTMLResponse)
 def download_ebook(request: Request, filename: str, user: current_user):
     try:
-        if user:
-            path = ('static/eBooks/' + filename)
-            if not os.path.isfile(path):
-                raise FileNotFoundError(path)
-            return FileResponse(path, media_type='application/octet-stream', filename=filename)
+        path = contained_file("static/eBooks", filename)
+        if user and path and os.path.isfile(path):
+            return FileResponse(path, media_type='application/octet-stream', filename=os.path.basename(path))
     except Exception:
         return "Failed to download ebook."
 
@@ -104,12 +103,9 @@ def delete_ebook(request: Request, ebookId: int, user: admin_user):
     try:
         db = SessionLocal()
         bookId, dbpath = crud.deleteEbook(db, ebookId)
-        ebookPath = os.path.join('./static/eBooks/', str(dbpath))
-        try:
-            os.remove(ebookPath)
-        except:
-            print(
-                "Tried to delete an ebook file that doesn't exist, removing DB entry")
+        ebook_path = contained_file("static/eBooks", str(dbpath))
+        if ebook_path and os.path.isfile(ebook_path):
+            os.remove(ebook_path)
         return RedirectResponse(url='/bookDetails/' + str(bookId), status_code=status.HTTP_303_SEE_OTHER)
     except Exception as e:
         print(e)
@@ -122,13 +118,16 @@ def delete_ebook(request: Request, ebookId: int, user: admin_user):
 async def upload_ebook(file: UploadFile, request: Request, bookId: int, user: admin_user):
     db = SessionLocal()
     try:
-        filename = str(os.path.basename(file.filename))
+        filename = str(os.path.basename(file.filename or ""))
         filename, extension = os.path.splitext(filename)
+        extension = extension if extension.replace(".", "").isalnum() else ""
         book = crud.getBookById(db, bookId)
-        title = (book.title[:26]) if len(book.title) > 26 else book.title
+        title = "".join(ch if ch.isalnum() else "_" for ch in book.title)[:26]
         unique_id = (str(uuid.uuid4()))[0:5]
         dbpath = str(title) + "_" + unique_id + extension
-        filepath = os.path.join('./static/eBooks/', dbpath)
+        filepath = contained_file("static/eBooks", dbpath)
+        if filepath is None:
+            return "An error has occured."
         async with aiofiles.open(filepath, 'wb') as f:
             while chunk := await file.read(CHUNK_SIZE):
                 await f.write(chunk)

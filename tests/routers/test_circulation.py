@@ -42,6 +42,14 @@ def _delete_book(book_id: int):
         db.close()
 
 
+def _post(client, url, data):
+    token = "csrf-test-token"
+    client.cookies.set("csrf_token", token)
+    payload = dict(data)
+    payload["csrf_token"] = token
+    return client.post(url, data=payload, follow_redirects=False)
+
+
 class TestAdminMediatedCirculation:
     def test_patron_cannot_checkout(self, client):
         title = f"circ-book-{uuid.uuid4().hex[:8]}"
@@ -49,11 +57,7 @@ class TestAdminMediatedCirculation:
         try:
             with create_test_user() as patron:
                 with access_token_cookie(client, patron):
-                    response = client.post(
-                        f"/withdraw/{book.id}",
-                        data={"borrower": patron.username},
-                        follow_redirects=False,
-                    )
+                    response = _post(client, f"/withdraw/{book.id}", {"borrower": patron.username})
             assert response.status_code == 303
         finally:
             _delete_book(book.id)
@@ -65,11 +69,7 @@ class TestAdminMediatedCirculation:
             with create_test_user(is_admin=True) as admin:
                 with create_test_user() as patron:
                     with access_token_cookie(client, admin):
-                        response = client.post(
-                            f"/withdraw/{book.id}",
-                            data={"borrower": patron.username},
-                            follow_redirects=False,
-                        )
+                        response = _post(client, f"/withdraw/{book.id}", {"borrower": patron.username})
                     assert response.status_code == 303
                     db = SessionLocal()
                     try:
@@ -85,11 +85,7 @@ class TestAdminMediatedCirculation:
         username = f"patron_{uuid.uuid4().hex[:8]}"
         with create_test_user(is_admin=True) as admin:
             with access_token_cookie(client, admin):
-                response = client.post(
-                    "/createLocalUser",
-                    data={"username": username, "password": "desk123"},
-                    follow_redirects=False,
-                )
+                response = _post(client, "/createLocalUser", {"username": username, "password": "desk-pass"})
         assert response.status_code == 303
         db = SessionLocal()
         try:

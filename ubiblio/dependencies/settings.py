@@ -20,6 +20,16 @@ settings = Settings()
 language_templates = "templates/" + LANGUAGE
 print(language_templates)
 templates = Jinja2Templates(directory=language_templates)
+_render_template = templates.TemplateResponse
+
+
+def _render_with_csrf(request, name, context=None, **kwargs):
+    context = {} if context is None else dict(context)
+    context.setdefault("csrf_token", getattr(request.state, "csrf_token", ""))
+    return _render_template(request, name, context, **kwargs)
+
+
+templates.TemplateResponse = _render_with_csrf
 
 
 def current_theme():

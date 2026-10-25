@@ -27,9 +27,8 @@ def list_library_users(db: Session):
     return db.query(models.User).order_by(models.User.username.asc()).all()
 
 def list_local_patrons(db: Session):
-    return db.query(models.User).filter(models.User.isAdmin == False).order_by(
-        models.User.surname1.asc(), models.User.givenName.asc()
-    ).all()
+    patrons = db.query(models.User).filter(models.User.isAdmin == False).all()
+    return sorted(patrons, key=lambda person: ((person.surname1 or "").casefold(), (person.givenName or "").casefold()))
 
 def library_theme(db: Session | None = None) -> str:
     own_session = db is None
@@ -126,6 +125,28 @@ def ensure_schema():
         conn.commit()
     finally:
         conn.close()
+    seal_user_records()
+
+def seal_user_records():
+    """Encrypt personal fields that are still stored as plaintext."""
+    from sqlalchemy.orm.attributes import flag_modified
+    from .database import SessionLocal
+    from .field_crypto import ENCRYPTED_USER_FIELDS, is_ciphertext
+
+    db = SessionLocal()
+    try:
+        changed = False
+        for person in db.query(models.User).all():
+            for name in ENCRYPTED_USER_FIELDS:
+                value = getattr(person, name)
+                if value and not is_ciphertext(value):
+                    flag_modified(person, name)
+                    changed = True
+        if changed:
+            db.commit()
+    finally:
+        db.close()
+
 
 def create_user(db: Session, user: schemas.UserCreate):
     try:
@@ -744,17 +765,18 @@ def createWithCode(db: Session, user: schemas.UserCreate, accessCode: str):
         
 def searchUsers(db: Session, name: str):
     try:
-        term = f"%{name}%"
-        return db.query(models.User).filter(or_(
-            models.User.username.ilike(term),
-            models.User.givenName.ilike(term),
-            models.User.surname1.ilike(term),
-            models.User.surname2.ilike(term),
-            models.User.phone.ilike(term),
-            models.User.email.ilike(term),
-            models.User.canton.ilike(term),
-            models.User.district.ilike(term),
-        )).all()
+        term = (name or "").casefold().strip()
+        people = db.query(models.User).all()
+        if not term:
+            return people
+        def matches(person):
+            fields = (
+                person.username, person.displayName, person.givenName, person.surname1,
+                person.surname2, person.phone, person.email, person.canton, person.district,
+                person.province, person.address,
+            )
+            return term in " ".join(field or "" for field in fields).casefold()
+        return [person for person in people if matches(person)]
     except:
         return False
 

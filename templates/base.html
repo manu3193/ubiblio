@@ -8,6 +8,7 @@
 	<head>
 		<script src="{{ url_for('static', path='assets/js/jquery.min.js') }}"></script>
 		<title>Biblioteca JFA Heredia</title>
+		<meta name="csrf-token" content="{{ csrf_token }}">
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap">
@@ -77,6 +78,28 @@
 			<script src="{{ url_for('static', path='assets/js/breakpoints.min.js')}}"></script>
 			<script src="{{ url_for('static', path='assets/js/util.js')}}"></script>
 			<script src="{{ url_for('static', path='assets/js/main.js')}}"></script>
+			<script>
+				(function () {
+					var tokenNode = document.querySelector('meta[name="csrf-token"]');
+					var token = tokenNode ? tokenNode.content : "";
+					if (window.jQuery) {
+						$.ajaxSetup({
+							beforeSend: function (xhr) {
+								xhr.setRequestHeader("X-CSRF-Token", token);
+							}
+						});
+					}
+					document.querySelectorAll("form").forEach(function (form) {
+						if (!form.querySelector('input[name="csrf_token"]')) {
+							var input = document.createElement("input");
+							input.type = "hidden";
+							input.name = "csrf_token";
+							input.value = token;
+							form.appendChild(input);
+						}
+					});
+				})();
+			</script>
 
 	</body>
 </html>

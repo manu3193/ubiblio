@@ -1,3 +1,7 @@
+# Biblioteca JFA Heredia
+
+Esta rama adapta uBiblio para la biblioteca de la Juventud del Frente Amplio en Heredia. La documentación del sistema y de los cambios está en [docs/BIBLIOTECA.md](docs/BIBLIOTECA.md).
+
 # Core Concept
 
 uBiblio is a small and fast web application to help you manage your personal library (and share it with friends, or form a book club). It provides a unified interface for both physical books and ebooks. It is free, open-source, designed for self-hosting, and will never contain ads or spy on you.

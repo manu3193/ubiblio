@@ -48,7 +48,7 @@
             <td>{{ row.person.phone if row.person and row.person.phone else "" }}</td>
             <td>{% if row.person %}{{ row.person.district }}{% if row.person.district and row.person.canton %}, {% endif %}{{ row.person.canton }}{% endif %}</td>
             {% if user.isAdmin %}
-            <td><a href="/returnLoan/{{ row.loan.id }}">Devolver</a></td>
+            <td><a href="/returnLoan/{{ row.loan.id }}?csrf_token={{ csrf_token }}">Devolver</a></td>
             {% endif %}
         </tr>
 	{% endfor %}
