@@ -12,15 +12,15 @@
    <!-- Search Input-->
 
 <form style = "margin-bottom:0px;" onsubmit="stats();return false;">
-<span>Options:&nbsp;&nbsp;<br class="mobileshow"></span><br>
+<span>Opciones:&nbsp;&nbsp;<br class="mobileshow"></span><br>
 <input type="radio" id="is_count" name="countSum" onclick="countContent();" value="False" checked>
-<label for="is_count">Count</label><br>
+<label for="is_count">Contar</label><br>
 <input type="radio" id="is_sum" name="countSum" onclick="sumContent();" value="True">
-<label for="is_sum">Sum</label><br>
-	<label for="groupBy">Field to group by:</label>
+<label for="is_sum">Sumar</label><br>
+	<label for="groupBy">Agrupar por:</label>
   <select style="margin-bottom:10px;" name="groupBy" id="groupBy">
 {% if fields %}
-	  <option value="">Select a field to query</option>
+	  <option value="">Elija un campo</option>
 	  {% for field in fields %}
 	  {% if field == "customField1" %}
   <option value='customField1'>{{ config.customFieldName1 }}</option>
@@ -35,10 +35,10 @@
 {% endif %}  
 </select>
 	<span id="hide_if_count" style="display:none">
-	<label for="target">Field to sum by (non-number contents ignored)</label>
+	<label for="target">Campo a sumar (se ignoran los valores que no son números)</label>
 	  <select style="margin-bottom:10px;" name="target" id="target">
 {% if fields %}
-	  <option value="">Select a field to query</option>
+	  <option value="">Elija un campo</option>
 	  {% for field in fields %}
 		  {% if field == "customField1" %}
 		  <option value='customField1'>{{ config.customFieldName1 }}</option>
@@ -53,14 +53,14 @@
 {% endif %}  
 </select>
 	</span>
-  <input style ="float:left;" type="submit" value="Summarize!">										
+  <input style ="float:left;" type="submit" value="Calcular">										
 </form>
 <br><br>		
 		
-<h2 id="result_count" style="margin-top:25px; margin-bottom:15px;">Results</h2>
+<h2 id="result_count" style="margin-top:25px; margin-bottom:15px;">Resultados</h2>
 
 <div class="container">  
-	<p id="results">No results yet.</p>
+	<p id="results">Todavía no hay resultados. Los préstamos pendientes están en el menú Préstamos pendientes.</p>
 </div>
 
 </div>

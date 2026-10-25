@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import redis.asyncio as redis
 from fastapi_limiter import FastAPILimiter
 
-from . import models
+from . import crud, models
 from .database import engine
 from .dependencies import templates
 from .vars import LOCAL_ONLY, USE_REDIS, REDIS_URL
@@ -12,6 +12,7 @@ from .vars import LOCAL_ONLY, USE_REDIS, REDIS_URL
 from .routers import auth, books, reading_lists, files, admin, federation
 
 models.Base.metadata.create_all(bind=engine)
+crud.ensure_schema()
 
 app = FastAPI(
     docs_url=None if LOCAL_ONLY else "/docs",

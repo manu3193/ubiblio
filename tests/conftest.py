@@ -20,3 +20,5 @@ def pytest_configure(config):
     from ubiblio.database import engine
 
     models.Base.metadata.create_all(bind=engine)
+    from ubiblio import crud
+    crud.ensure_schema()

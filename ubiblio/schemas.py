@@ -20,6 +20,15 @@ class User(UserBase):
 #This is so password plaintext is only sent/received by anything on account creation
 class UserCreate(UserBase):
     password: str
+    givenName: Optional[str] = Field(default=None)
+    surname1: Optional[str] = Field(default=None)
+    surname2: Optional[str] = Field(default=None)
+    province: Optional[str] = Field(default=None)
+    canton: Optional[str] = Field(default=None)
+    district: Optional[str] = Field(default=None)
+    address: Optional[str] = Field(default=None)
+    phone: Optional[str] = Field(default=None)
+    email: Optional[str] = Field(default=None)
     
 
 class BookBase(BaseModel):
@@ -42,6 +51,10 @@ class Book(BookBase):
     customField1: Optional[str] = Field(default=None)
     customField2: Optional[str] = Field(default=None)
     ebook: Optional[bool] = Field(default=False)
+    publisher: Optional[str] = Field(default=None)
+    pages: Optional[int] = Field(default=None)
+    copies: Optional[int] = Field(default=None)
+    available: Optional[int] = Field(default=None)
                 
 class BookCreate(BookBase):
     author: Optional[str] = Field(default=None)
@@ -85,6 +98,9 @@ class config(BaseModel):
     customFieldName1: Optional[str] = Field(default=None)
     customFieldName2: Optional[str] = Field(default=None)
     genres: str = Field(default=",".join(DEFAULT_GENRES))
+    patronSelfService: bool = Field(default=False)
+    ebooksEnabled: bool = Field(default=False)
+    theme: str = Field(default="light")
     model_config = ConfigDict(from_attributes=True)
 
 class userEmail(BaseModel):

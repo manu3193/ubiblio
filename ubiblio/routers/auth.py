@@ -6,7 +6,7 @@ from .. import crud, schemas, database
 from ..database import SessionLocal
 from ..dependencies import (
     get_rate_limiter, templates, settings, console,
-    login_for_access_token, LoginForm, newUserForm,
+    authenticate_user, login_for_access_token, LoginForm, newUserForm,
 )
 from ..vars import ADMIN_USERNAME, ADMIN_PASSWORD, CREATE_ADMIN_USER, CREATE_USER, USER_USERNAME, USER_PASSWORD
 
@@ -19,6 +19,12 @@ async def login_post(request: Request):
     await form.load_data()
     if await form.is_valid():
         try:
+            identified = authenticate_user(form.username, form.password)
+            if identified and not identified.isAdmin and not crud.patron_self_service_enabled():
+                form.__dict__.get("errors").append(
+                    "El acceso en línea está desactivado. Solo la persona facilitadora entra al sistema y presta los libros."
+                )
+                return templates.TemplateResponse(request, "login.html", form.__dict__)
             response = RedirectResponse("/", status.HTTP_303_SEE_OTHER)
             login_for_access_token(response=response, form_data=form)
             form.__dict__.update(msg="Login Successful!")
@@ -26,7 +32,7 @@ async def login_post(request: Request):
             return response
         except HTTPException:
             form.__dict__.update(msg="")
-            form.__dict__.get("errors").append("Incorrect Email or Password")
+            form.__dict__.get("errors").append("Usuario o contraseña incorrectos")
             return templates.TemplateResponse(request, "login.html", form.__dict__)
     return templates.TemplateResponse(request, "login.html", form.__dict__)
 

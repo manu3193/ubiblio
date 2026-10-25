@@ -36,6 +36,8 @@ async def add_book_post(request: Request, user: admin_user):
     if await form.is_valid():
         try:
             db = SessionLocal()
+            if not crud.ebooks_enabled(db):
+                form.ebook = False
             new_book = service.book_create_from_form(form)
             crud.createBook(db, new_book)
             db.close()
@@ -65,11 +67,12 @@ async def book_details(bookId, request: Request, user: current_user):
             "user": user,
             "request": request,
             "patrons": crud.list_local_patrons(db),
+            "loans": crud.active_loans(db, book.id) if book else [],
         }
         if config.coverImages:
             images = crud.getImages(db, bookId)
             context["images"] = images
-        if book.ebook == True:
+        if book.ebook == True and config.ebooksEnabled:
             ebook_files = crud.getEbookFiles(db, bookId)
             context["ebookFiles"] = ebook_files
             db.close()
@@ -88,7 +91,16 @@ async def update_book(bookId, request: Request, user: admin_user):
     if await form.is_valid():
         try:
             db = SessionLocal()
+            if not crud.ebooks_enabled(db):
+                form.ebook = False
+            existing = crud.getBookById(db, bookId)
             book = service.book_update_from_form(bookId, form)
+            if existing:
+                copies, available = crud.stock_of(existing)
+                book.publisher = existing.publisher
+                book.pages = existing.pages
+                book.copies = copies
+                book.available = available
             crud.updateBook(db, book)
             book = crud.getBookById(db, bookId)
             db.close()
@@ -119,31 +131,30 @@ def update_book_form(bookId, request: Request, user: admin_user):
 
 @router.get("/scan_isbn", dependencies=[get_rate_limiter(times=3, seconds=2)], response_class=HTMLResponse)
 def scan_book_form(request: Request, user: schemas.User = admin_user):
-    try:
-        db = SessionLocal()
-        config = crud.getConfig(db)
-        db.close()
-        context = {
-            "config": config,
-            "user": user,
-            "request": request,
-        }
-        return templates.TemplateResponse(request, "scanIsbn.html", context)
-    except Exception as e:
-        print(e)
-        return "An error has occured."
+    return RedirectResponse(url="/searchbooks")
 
 
 # --------------------------------------------------------------------------
 # Search
 # --------------------------------------------------------------------------
+def _ebook_search_flags(db, only_ebooks, no_ebooks):
+    if not crud.ebooks_enabled(db):
+        return False, True
+    return bool(only_ebooks), bool(no_ebooks)
+
+
 @router.get("/searchbooks", dependencies=[get_rate_limiter(times=4, seconds=2)], response_class=HTMLResponse)
 def search_book_get(request: Request, user: current_user):
-    data = []
+    db = SessionLocal()
+    try:
+        ebooks_enabled = crud.ebooks_enabled(db)
+    finally:
+        db.close()
     context = {
         "request": request,
         "user": user,
-        "data": data,
+        "data": [],
+        "ebooksEnabled": ebooks_enabled,
     }
     return templates.TemplateResponse(request, "booksearch.html", context)
 
@@ -159,7 +170,8 @@ def search_books(
         noEbooks: bool = "%"):
     db = SessionLocal()
     try:
-        return service.search_books_json(db, str(title), str(author), int(skip), bool(onlyEbooks), bool(noEbooks))
+        only_flag, no_flag = _ebook_search_flags(db, onlyEbooks, noEbooks)
+        return service.search_books_json(db, str(title), str(author), int(skip), only_flag, no_flag)
     finally:
         db.close()
 
@@ -175,8 +187,9 @@ def search_book_author(
 ):
     db = SessionLocal()
     try:
+        only_flag, no_flag = _ebook_search_flags(db, onlyEbooks, noEbooks)
         out = service.search_books_by_author_json(
-            db, str(author), int(skip), bool(onlyEbooks), bool(noEbooks))
+            db, str(author), int(skip), only_flag, no_flag)
         if out is None:
             return "An error has occured."
         return out
@@ -195,8 +208,9 @@ def search_book_title(
 ):
     db = SessionLocal()
     try:
+        only_flag, no_flag = _ebook_search_flags(db, onlyEbooks, noEbooks)
         out = service.search_books_by_title_json(
-            db, str(title), int(skip), bool(onlyEbooks), bool(noEbooks))
+            db, str(title), int(skip), only_flag, no_flag)
         if out is None:
             return "An error has occured."
         return out

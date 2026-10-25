@@ -20,3 +20,11 @@ settings = Settings()
 language_templates = "templates/" + LANGUAGE
 print(language_templates)
 templates = Jinja2Templates(directory=language_templates)
+
+
+def current_theme():
+    from .. import crud
+    return crud.library_theme()
+
+
+templates.env.globals["current_theme"] = current_theme

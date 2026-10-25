@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block main %}
+<section id="two">
+	<div class="inner" style="padding: 20px 0 1em 0;">
+		<h1>Cargar libros desde Excel</h1>
+		<p>Use las primeras cinco columnas, en este orden: <strong>Autorías, Título, Editorial, Páginas, Cantidad</strong>. La primera fila puede ser el encabezado.</p>
+		<p>Si el título y la autoría ya existen, la cantidad se suma a las copias y a las disponibles. Cada copia se presta por separado.</p>
+		{% for error in errors %}
+		<p style="color: red">{{ error }}</p>
+		{% endfor %}
+		{% if created is not none %}
+		<p>Libros nuevos: {{ created }}. Títulos que ya estaban y sumaron copias: {{ updated }}. Filas omitidas: {{ skipped }}.</p>
+		{% endif %}
+		<form action="/importBooks" method="post" enctype="multipart/form-data">
+			<label for="file">Archivo .xlsx o .csv</label>
+			<input type="file" id="file" name="file" accept=".xlsx,.csv" required>
+			<input type="submit" value="Cargar" style="margin-top: 15px;">
+		</form>
+		<p style="margin-top: 25px;"><a href="/add_book">Volver a agregar</a></p>
+	</div>
+</section>
+{% endblock %}

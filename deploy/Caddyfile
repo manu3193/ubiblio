@@ -1,17 +1,21 @@
 {
 	admin off
-	auto_https disable_redirects
+	auto_https off
 }
 
-https://ubiblio.home {
-	tls internal
+:443 {
+	tls /certs/ip.crt /certs/ip.key
 	encode gzip
 	header {
-		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options nosniff
 		Referrer-Policy same-origin
 		X-Frame-Options DENY
 		-Server
 	}
-	reverse_proxy ubiblio:8000
+	reverse_proxy ubiblio:8000 {
+		lb_try_duration 10s
+		transport http {
+			versions 1.1
+		}
+	}
 }

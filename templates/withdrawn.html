@@ -11,35 +11,49 @@
 {% endfor %}
   <!-- Search Input-->
 		
-<h2 style="margin-top:25px; margin-bottom:15px;">On Loan</h2>
-<p>Physical copies currently borrowed by local patrons. Return them here when they come back to the desk.</p>
+<h2 style="margin-top:25px; margin-bottom:15px;">Préstamos pendientes</h2>
+<p>Ejemplares que todavía no han vuelto al mostrador. La persona facilitadora los recibe y los marca como devueltos.</p>
+<p><strong>{{ rows|length }}</strong> ejemplar(es) pendiente(s).</p>
+
+{% if summary %}
+<h3>Por persona</h3>
+<ul>
+{% for row in summary %}
+    <li>{{ row.name }}: {{ row.total }}</li>
+{% endfor %}
+</ul>
+{% endif %}
 
 <div class="container">  
   <table>
     <thead class="visible@l">
       <tr>
-        <th>Title</th>
-        <th>Author</th>
-        <th>Borrowed by</th>
+        <th>Título</th>
+        <th>Autor</th>
+        <th>Persona</th>
+        <th>Teléfono</th>
+        <th>Lugar</th>
         {% if user.isAdmin %}
-        <th>Actions</th>
+        <th>Acciones</th>
         {% endif %}
       </tr>
     </thead>
     <tbody id = "tablebody">
-{% if books|length > 0 %}
-	{% for book in books %}
+{% if rows|length > 0 %}
+	{% for row in rows %}
 		<tr>
-            <td><a href="/bookDetails/{{ book.id }}">{{ book.title }}</a></td>
-            <td>{{ book.author }}</td>
-            <td>{{ book.withdrawnBy }}</td>
+            <td><a href="/bookDetails/{{ row.book.id }}">{{ row.book.title }}</a></td>
+            <td>{{ row.book.author }}</td>
+            <td>{{ row.person.displayName if row.person else row.loan.username }}</td>
+            <td>{{ row.person.phone if row.person and row.person.phone else "" }}</td>
+            <td>{% if row.person %}{{ row.person.district }}{% if row.person.district and row.person.canton %}, {% endif %}{{ row.person.canton }}{% endif %}</td>
             {% if user.isAdmin %}
-            <td><a href="/return/{{ book.id }}">Return</a></td>
+            <td><a href="/returnLoan/{{ row.loan.id }}">Devolver</a></td>
             {% endif %}
         </tr>
 	{% endfor %}
 {% else %}
-		<tr><td>No books on loan</td><td></td><td></td></tr>
+		<tr><td>No hay préstamos pendientes</td><td></td><td></td></tr>
 {% endif %}
     </tbody>
   </table>

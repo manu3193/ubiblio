@@ -9,6 +9,21 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     passhash = Column(String)
     isAdmin = Column(Boolean, default=False)
+    givenName = Column(String, nullable=True)
+    surname1 = Column(String, nullable=True)
+    surname2 = Column(String, nullable=True)
+    province = Column(String, nullable=True)
+    canton = Column(String, nullable=True)
+    district = Column(String, nullable=True)
+    address = Column(String, nullable=True)
+    phone = Column(String, nullable=True)
+    email = Column(String, nullable=True)
+
+    @property
+    def displayName(self):
+        parts = [self.givenName, self.surname1, self.surname2]
+        name = " ".join(part for part in parts if part)
+        return name or self.username
 
 class Book(Base):
     __tablename__ = "books"
@@ -28,6 +43,17 @@ class Book(Base):
     customField1 = Column(String, nullable=True)
     customField2 = Column(String, nullable=True)
     ebook = Column(Boolean,nullable=True, default=False)
+    publisher = Column(String, nullable=True)
+    pages = Column(Integer, nullable=True)
+    copies = Column(Integer, nullable=True, default=1)
+    available = Column(Integer, nullable=True, default=1)
+
+class Loan(Base):
+    __tablename__ = "loans"
+    id = Column(Integer, primary_key=True)
+    bookId = Column(Integer, ForeignKey("books.id"))
+    username = Column(String, nullable=False)
+    active = Column(Boolean, default=True)
 
 class readingListItems(Base):
     __tablename__ = "readinglistitems"
@@ -49,6 +75,9 @@ class config(Base):
     customFieldName1 = Column(String, nullable=True)
     customFieldName2 = Column(String, nullable=True)
     genres = Column(String)
+    patronSelfService = Column(Boolean, default=False)
+    ebooksEnabled = Column(Boolean, default=False)
+    theme = Column(String, nullable=True, default="light")
 
 class ebook(Base):
     __tablename__ = "ebooks"

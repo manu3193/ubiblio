@@ -6,36 +6,63 @@
 	<section id="two">
 		<div class="inner" style = "padding: 20px 0 1em 0;">
 
-<h1>Manage Library Users</h1>
+<h1>Personas de la biblioteca</h1>
 
-<p>Local patrons only. When someone comes to the library, add them here, then check books out to them from the book page.</p>
+<p>La persona facilitadora registra a quien llega y presta los libros en el mostrador. Las personas no solicitan libros por su cuenta.</p>
 
 {% for error in errors %}
     <p style="color: red">{{ error }}</p>
 {% endfor %}
 
-<h2 style="margin-top:10px; margin-bottom:15px;">Add local patron</h2>
+<h2 style="margin-top:10px; margin-bottom:15px;">Registrar persona</h2>
 <form action="/createLocalUser" method="post" style="margin-bottom:25px;">
-  <p><label for="username">Username</label></p>
-  <input type="text" id="username" name="username" required>
-  <p><label for="password">Password</label></p>
+  <p><label for="givenName">Nombre</label></p>
+  <input type="text" id="givenName" name="givenName" value="{{ form.givenName or '' }}" required>
+  <p><label for="surname1">Apellido 1</label></p>
+  <input type="text" id="surname1" name="surname1" value="{{ form.surname1 or '' }}" required>
+  <p><label for="surname2">Apellido 2</label></p>
+  <input type="text" id="surname2" name="surname2" value="{{ form.surname2 or '' }}">
+  <p><label for="province">Provincia</label></p>
+  <select name="province" id="province" required>
+    <option value="" disabled {% if not form.province %}selected{% endif %}>Seleccione la provincia</option>
+    {% for province in provinces %}
+    <option value="{{ province }}" {% if form.province == province %}selected{% endif %}>{{ province }}</option>
+    {% endfor %}
+  </select>
+  <p><label for="canton">Cantón</label></p>
+  <input type="text" id="canton" name="canton" value="{{ form.canton or '' }}" required>
+  <p><label for="district">Distrito</label></p>
+  <input type="text" id="district" name="district" value="{{ form.district or '' }}" required>
+  <p><label for="address">Dirección exacta</label></p>
+  <input type="text" id="address" name="address" value="{{ form.address or '' }}" required>
+  <p><label for="phone">Número de teléfono</label></p>
+  <input type="tel" id="phone" name="phone" value="{{ form.phone or '' }}" required>
+  <p><label for="email">Correo electrónico</label></p>
+  <input type="email" id="email" name="email" value="{{ form.email or '' }}">
+  {% if patronSelfService %}
+  <p><label for="password">Contraseña para el acceso en línea</label></p>
   <input type="password" id="password" name="password" required>
-  <input type="submit" value="Add patron">
+  {% endif %}
+  <input type="submit" value="Registrar">
 </form>
 
 <form style = "margin-bottom:0px;" onsubmit="search(0);return false;">
-  <input type="text" id = "searchboxInput" name="searchboxInput" value="" />
-  <input style ="float:left;" type="submit" value="Search">										
+  <input type="text" id = "searchboxInput" name="searchboxInput" value="" placeholder="Nombre, teléfono o correo" />
+  <input style ="float:left;" type="submit" value="Buscar">										
 </form>
-<a style ='text-decoration:none !important; border:none;margin-left:25px;' href="/newUserCode"><button style="margin-bottom:25px;">Invite via link</button></a>
-<h2 style="margin-top:25px; margin-bottom:15px;">User List</h2>
+{% if patronSelfService %}
+<a style ='text-decoration:none !important; border:none;margin-left:25px;' href="/newUserCode"><button style="margin-bottom:25px;">Invitar con enlace</button></a>
+{% endif %}
+<h2 style="margin-top:25px; margin-bottom:15px;">Personas registradas</h2>
 <div class="container">  
   <table>
     <thead class="visible@l">
       <tr>
-        <th>Username</th>
-        <th>Role</th>
-		<th>Actions</th>  
+        <th>Nombre</th>
+        <th>Teléfono</th>
+        <th>Correo</th>
+        <th>Cantón</th>
+		<th>Acciones</th>  
       </tr>
     </thead>
     <tbody id = "tablebody">
@@ -69,18 +96,18 @@ $.post(searchEndpoint,function(data, status){
     $("#tablebody").empty();
     $("#pagination").empty();
     itemdata.forEach(function(item) {
-    $("#tablebody").append('<tr><td>'+item.username+'</td><td>'+(item.isAdmin ? 'Admin' : 'Patron')+'</td><td><a href= /promote/'+item.id+'>Set to Admin</a>&nbsp;&nbsp;<a href=/demote/'+item.id+'>Set to Patron</a>&nbsp;&nbsp;<a href="/deleteUser/'+item.id+'" onclick="return confirm(&#39;Are you sure?&#39;);">Delete</a></td></tr>');
+    $("#tablebody").append('<tr><td>'+item.displayName+'</td><td>'+item.phone+'</td><td>'+item.email+'</td><td>'+item.canton+'</td><td>'+(item.isAdmin ? 'Administración' : '<a href="/deleteUser/'+item.id+'" onclick="return confirm(&#39;¿Eliminar a esta persona?&#39;);">Eliminar</a>')+'</td></tr>');
 });
 
 if (itemdata.length === 0){
-        $("#tablebody").append('<tr><td>' + "No results found" + '</td><td></td></tr>');
+        $("#tablebody").append('<tr><td>' + "No hay resultados" + '</td><td></td></tr>');
     }
 if (pagination > 0){
-$("#pagination").append("<button onclick='previous();'>Previous</button>");
+$("#pagination").append("<button onclick='previous();'>Anterior</button>");
 }
 
 if(itemdata.length > 49){
-$("#pagination").append("<button onclick='next();'>Next</button>");
+$("#pagination").append("<button onclick='next();'>Siguiente</button>");
 }
 
 });}

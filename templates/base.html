@@ -7,24 +7,25 @@
 <html>
 	<head>
 		<script src="{{ url_for('static', path='assets/js/jquery.min.js') }}"></script>
-		<title>uBiblio</title>
+		<title>Biblioteca JFA Heredia</title>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap">
 		<link rel="stylesheet" href="{{ url_for('static', path='assets/css/main.css')}}" />
 		<link rel="stylesheet" href="{{ url_for('static', path='assets/css/extra.css')}}" />
 		<link rel="icon" href="{{ url_for('static', path='images/favicon.svg') }}">
 		<noscript><link rel="stylesheet" href="{{ url_for('static', path='assets/css/noscript.css')}}" /></noscript>
 	</head>
-	<body class="is-preload">
+	<body class="is-preload theme-{{ current_theme() }}">
 
 		<!-- Wrapper -->
 			<div id="wrapper">
 
 				<!-- Header -->
 					<header id="header" class="alt">
-						<a href="/" class="logo"><strong>uBiblio</strong> <span>Personal Library</span></a>
+						<a href="/" class="logo"><svg class="brand-star" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12,1.8 14.9,8.6 22.2,9.2 16.6,14.1 18.4,21.2 12,17.4 5.6,21.2 7.4,14.1 1.8,9.2 9.1,8.6"/></svg><strong>Biblioteca JFA</strong> <span>Heredia</span></a>
 						<nav>
-							<a href="#menu">Menu</a>
+							<a href="#menu">Menú</a>
 						</nav>
 					</header>
 
@@ -32,24 +33,24 @@
         {% if hideNav is defined and hideNav %}
 					<nav id="menu">
 						<ul class="links">
-							<li>Log In for Access</li>
+							<li>Inicie sesión para entrar</li>
 						</ul>
 					</nav>
           {% else %}
 						<nav id="menu">
 							<ul class="links">
-							<li><a href="/">Search</a></li>
-							<li><a href="/genre/">Browse by Genre</a></li>
-								<li><a href="/wishlist/">Wishlist</a></li>
-							<li><a href="/readingLists">Reading Lists</a></li>
-								<li><a href="/withdrawn">On Loan</a></li>
+							<li><a href="/">Buscar</a></li>
+							<li><a href="/genre/">Explorar por género</a></li>
+								<li><a href="/wishlist/">Lista de deseos</a></li>
+							<li><a href="/readingLists">Listas de lectura</a></li>
+								<li><a href="/withdrawn">Préstamos pendientes</a></li>
 								{% if user.isAdmin %}
-								<li><a href="/userManagement">Patrons</a></li>
-								<li><a href="/config">Admin</a></li>
+								<li><a href="/userManagement">Personas</a></li>
+								<li><a href="/config">Administración</a></li>
 								{% endif %}
 						</ul>
 						<ul class="actions stacked">
-							<li><a href="/auth/logout" class="button fit">Log Out</a></li>
+							<li><a href="/auth/logout" class="button fit">Salir</a></li>
 						</ul>
 					</nav>
         {% endif %}
@@ -61,7 +62,7 @@
 						<div class="inner">
 							
 							<ul class="copyright">
-								<li>&copy; Sean Boyce</li><li>Design: <a href="https://html5up.net">HTML5 UP</a></li>
+								<li>Biblioteca JFA Heredia</li><li>Juventud del Frente Amplio</li><li>Design: <a href="https://html5up.net">HTML5 UP</a></li>
 							</ul>
 						</div>
 					</footer>

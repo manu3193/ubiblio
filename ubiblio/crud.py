@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 from sqlalchemy.sql import func
@@ -25,12 +27,123 @@ def list_library_users(db: Session):
     return db.query(models.User).order_by(models.User.username.asc()).all()
 
 def list_local_patrons(db: Session):
-    return db.query(models.User).filter(models.User.isAdmin == False).order_by(models.User.username.asc()).all()
+    return db.query(models.User).filter(models.User.isAdmin == False).order_by(
+        models.User.surname1.asc(), models.User.givenName.asc()
+    ).all()
+
+def library_theme(db: Session | None = None) -> str:
+    own_session = db is None
+    if own_session:
+        from .database import SessionLocal
+        db = SessionLocal()
+    try:
+        config = db.query(models.config).first()
+        theme = (config.theme or "light") if config else "light"
+        return theme if theme in ("light", "dark") else "light"
+    except Exception:
+        return "light"
+    finally:
+        if own_session:
+            db.close()
+
+def ebooks_enabled(db: Session | None = None) -> bool:
+    own_session = db is None
+    if own_session:
+        from .database import SessionLocal
+        db = SessionLocal()
+    try:
+        config = db.query(models.config).first()
+        return bool(config and config.ebooksEnabled)
+    except Exception:
+        return False
+    finally:
+        if own_session:
+            db.close()
+
+def patron_self_service_enabled(db: Session | None = None) -> bool:
+    own_session = db is None
+    if own_session:
+        from .database import SessionLocal
+        db = SessionLocal()
+    try:
+        config = db.query(models.config).first()
+        return bool(config and config.patronSelfService)
+    except Exception:
+        return False
+    finally:
+        if own_session:
+            db.close()
+
+def ensure_schema():
+    """Add columns that create_all does not add to an existing SQLite file."""
+    conn = sqlite3.connect(DB_LOCATION)
+    try:
+        tables = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        if "users" in tables:
+            user_columns = {row[1] for row in conn.execute("PRAGMA table_info('users')")}
+            for column in (
+                "givenName", "surname1", "surname2", "province", "canton",
+                "district", "address", "phone", "email",
+            ):
+                if column not in user_columns:
+                    conn.execute(f"ALTER TABLE users ADD COLUMN {column} VARCHAR")
+        if "books" in tables:
+            book_columns = {row[1] for row in conn.execute("PRAGMA table_info('books')")}
+            for column, declaration in (
+                ("publisher", "VARCHAR"),
+                ("pages", "INTEGER"),
+                ("copies", "INTEGER"),
+                ("available", "INTEGER"),
+            ):
+                if column not in book_columns:
+                    conn.execute(f"ALTER TABLE books ADD COLUMN {column} {declaration}")
+            conn.execute("UPDATE books SET copies = 1 WHERE copies IS NULL")
+            conn.execute(
+                "UPDATE books SET available = CASE WHEN withdrawn = 1 THEN 0 ELSE COALESCE(copies, 1) END "
+                "WHERE available IS NULL"
+            )
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS loans ("
+            "id INTEGER PRIMARY KEY, bookId INTEGER, username VARCHAR, active BOOLEAN DEFAULT 1)"
+        )
+        conn.execute(
+            "INSERT INTO loans (bookId, username, active) "
+            "SELECT id, withdrawnBy, 1 FROM books "
+            "WHERE withdrawn = 1 AND withdrawnBy IS NOT NULL AND withdrawnBy != '' "
+            "AND id NOT IN (SELECT bookId FROM loans WHERE active = 1)"
+        )
+        if "config" in tables:
+            config_columns = {row[1] for row in conn.execute("PRAGMA table_info('config')")}
+            if "patronSelfService" not in config_columns:
+                conn.execute("ALTER TABLE config ADD COLUMN patronSelfService BOOLEAN DEFAULT 0")
+                conn.execute("UPDATE config SET patronSelfService = 0 WHERE patronSelfService IS NULL")
+            if "ebooksEnabled" not in config_columns:
+                conn.execute("ALTER TABLE config ADD COLUMN ebooksEnabled BOOLEAN DEFAULT 0")
+                conn.execute("UPDATE config SET ebooksEnabled = 0 WHERE ebooksEnabled IS NULL")
+            if "theme" not in config_columns:
+                conn.execute("ALTER TABLE config ADD COLUMN theme VARCHAR DEFAULT 'light'")
+            conn.execute("UPDATE config SET theme = 'light' WHERE theme IS NULL OR theme = ''")
+        conn.commit()
+    finally:
+        conn.close()
 
 def create_user(db: Session, user: schemas.UserCreate):
     try:
         passhash = crypto.hash(str(user.password))
-        db_user = models.User(username=user.username, passhash=passhash, isAdmin = user.isAdmin)
+        db_user = models.User(
+            username=user.username,
+            passhash=passhash,
+            isAdmin=user.isAdmin,
+            givenName=user.givenName,
+            surname1=user.surname1,
+            surname2=user.surname2,
+            province=user.province,
+            canton=user.canton,
+            district=user.district,
+            address=user.address,
+            phone=user.phone,
+            email=user.email,
+        )
         db.add(db_user)
         db.commit()
         db.refresh(db_user)
@@ -51,7 +164,7 @@ def isAdmin(db: Session, username: str):
 
 def createBook(db: Session, book: schemas.Book):
     try:
-        book = models.Book(** book.model_dump())
+        book = models.Book(** book.model_dump(exclude_none=True))
         db.add(book)
         db.commit()
         db.refresh(book)
@@ -73,6 +186,104 @@ def deleteBook(db: Session, bookId):
         print(e)
         return "False"
  
+def stock_of(book):
+    copies = book.copies if book.copies is not None else 1
+    if book.available is None:
+        available = 0 if book.withdrawn else copies
+    else:
+        available = book.available
+    return copies, available
+
+
+def lend_copy(db: Session, book, username: str) -> bool:
+    copies, available = stock_of(book)
+    if available < 1:
+        return False
+    book.copies = copies
+    book.available = available - 1
+    book.withdrawn = book.available == 0
+    book.withdrawnBy = username
+    db.add(models.Loan(bookId=book.id, username=username, active=True))
+    db.commit()
+    return True
+
+
+def return_loan(db: Session, loan) -> bool:
+    if not loan or not loan.active:
+        return False
+    book = db.get(models.Book, loan.bookId)
+    if not book:
+        return False
+    loan.active = False
+    copies, available = stock_of(book)
+    book.copies = copies
+    book.available = min(copies, available + 1)
+    book.withdrawn = book.available == 0
+    next_loan = db.query(models.Loan).filter(
+        models.Loan.bookId == book.id,
+        models.Loan.active == True,
+        models.Loan.id != loan.id,
+    ).order_by(models.Loan.id.desc()).first()
+    book.withdrawnBy = next_loan.username if next_loan else None
+    db.commit()
+    return True
+
+
+def active_loans(db: Session, book_id=None):
+    query = db.query(models.Loan).filter(models.Loan.active == True)
+    if book_id is not None:
+        query = query.filter(models.Loan.bookId == book_id)
+    return query.order_by(models.Loan.id.asc()).all()
+
+
+def import_catalog(db: Session, rows: list[list[str]]):
+    from .spreadsheet import catalog_rows
+    created = updated = skipped = 0
+    existing = db.query(models.Book).all()
+
+    def same(book, title, author):
+        return " ".join((book.title or "").casefold().split()) == title and " ".join((book.author or "").casefold().split()) == author
+
+    for item in catalog_rows(rows):
+        if not item["title"]:
+            skipped += 1
+            continue
+        quantity = item["quantity"] if item["quantity"] is not None else 1
+        if quantity < 1:
+            skipped += 1
+            continue
+        title_key = " ".join(item["title"].casefold().split())
+        author_key = " ".join(item["author"].casefold().split())
+        match = next((book for book in existing if same(book, title_key, author_key)), None)
+        if match:
+            copies, available = stock_of(match)
+            match.copies = copies + quantity
+            match.available = available + quantity
+            match.withdrawn = match.available == 0
+            if item["publisher"]:
+                match.publisher = item["publisher"]
+            if item["pages"] is not None:
+                match.pages = item["pages"]
+            updated += 1
+        else:
+            book = models.Book(
+                title=item["title"],
+                author=item["author"] or None,
+                publisher=item["publisher"] or None,
+                pages=item["pages"],
+                copies=quantity,
+                available=quantity,
+                owned=True,
+                withdrawn=False,
+                ebook=False,
+            )
+            db.add(book)
+            existing.append(book)
+            created += 1
+    db.commit()
+    return created, updated, skipped
+
+
 def getBookById(db: Session, bookId):
     try:
         return db.query(models.Book).filter(models.Book.id == bookId).first()
@@ -389,11 +600,12 @@ def initConfig(db: Session):
         config = db.query(models.config).first()
         if not config:    
             conn = sqlite3.connect(DB_LOCATION)
-            initData =["1.0.1",False,"","",",".join(schemas.DEFAULT_GENRES)]
-            cursor = conn.execute('create table if not exists Config (id INTEGER PRIMARY KEY, version VARCHAR, coverImages BOOLEAN, customFieldName1 VARCHAR, customFieldName2 VARCHAR, genres VARCHAR);')
-            cursor = conn.execute('INSERT INTO config (version, coverImages, customFieldName1, customFieldName2, genres) VALUES (?, ?, ?, ?, ?);', initData)
+            initData =["1.0.1",False,"","",",".join(schemas.DEFAULT_GENRES), False, False]
+            cursor = conn.execute('create table if not exists Config (id INTEGER PRIMARY KEY, version VARCHAR, coverImages BOOLEAN, customFieldName1 VARCHAR, customFieldName2 VARCHAR, genres VARCHAR, patronSelfService BOOLEAN, ebooksEnabled BOOLEAN);')
+            cursor = conn.execute('INSERT INTO config (version, coverImages, customFieldName1, customFieldName2, genres, patronSelfService, ebooksEnabled) VALUES (?, ?, ?, ?, ?, ?, ?);', initData)
             conn.commit()
             conn.close()
+            ensure_schema()
             return
         else:
             return
@@ -532,7 +744,17 @@ def createWithCode(db: Session, user: schemas.UserCreate, accessCode: str):
         
 def searchUsers(db: Session, name: str):
     try:
-        return db.query(models.User).filter(models.User.username.icontains(name)).all()
+        term = f"%{name}%"
+        return db.query(models.User).filter(or_(
+            models.User.username.ilike(term),
+            models.User.givenName.ilike(term),
+            models.User.surname1.ilike(term),
+            models.User.surname2.ilike(term),
+            models.User.phone.ilike(term),
+            models.User.email.ilike(term),
+            models.User.canton.ilike(term),
+            models.User.district.ilike(term),
+        )).all()
     except:
         return False
 

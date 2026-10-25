@@ -5,28 +5,26 @@
 	<!-- Two -->
 <div class="inner" style = "padding: 20px 0 5em 5em;">
 <div style="display:block; clear:both; float:none;">
-<h3><strong><u>Book Details</strong></u></h3>
+<h3><strong><u>Ficha del libro</strong></u></h3>
 <div style="display:block; clear:both; float:none;">
 <div style="width:30%; min-width: 300px; float:left; margin-right:30px;">								
 
 		
-		<p><strong>Title</strong>:  {{ book.title}}</p>
-        <p><strong>Author</strong>:  {{ book.author}}</p>
-        <p><strong>Summary</strong>:  {{ book.summary}}</p>
-        <p><strong>Genre</strong>:  {{ book.genre}}</p>
-        <p><strong>Library</strong>:  {{ book.library}}</p>
-		<p><strong>Location</strong>:  {{book.shelf}}</p>
+		<p><strong>Título</strong>:  {{ book.title}}</p>
+        <p><strong>Autor</strong>:  {{ book.author}}</p>
+        <p><strong>Resumen</strong>:  {{ book.summary}}</p>
+        <p><strong>Género</strong>:  {{ book.genre}}</p>
+        <p><strong>Biblioteca</strong>:  {{ book.library}}</p>
+		<p><strong>Ubicación</strong>:  {{book.shelf}}</p>
 
                                 </div>
     <div style="width:30%; min-width: 280px; float:left;">
-        <p><strong>Collection</strong>:  {{ book.collection}}</p>
+        <p><strong>Colección</strong>:  {{ book.collection}}</p>
         <p><strong>ISBN</strong>:  {{ book.ISBN}}</p>
-		<p><strong>Notes</strong>:  {{book.notes}}</p>
-		<p><strong>Owned</strong>:  {{ book.owned}}</p>
-		<p><strong>On loan</strong>:  {{ book.withdrawn}}</p>
-		{% if book.withdrawn %}
-		<p><strong>Borrowed by</strong>:  {{ book.withdrawnBy }}</p>
-		{% endif %}
+		<p><strong>Notas</strong>:  {{book.notes}}</p>
+		<p><strong>Editorial</strong>:  {{ book.publisher or "" }}</p>
+		<p><strong>Páginas</strong>:  {{ book.pages if book.pages is not none else "" }}</p>
+		<p><strong>Disponibles</strong>:  {{ book.available if book.available is not none else (0 if book.withdrawn else 1) }} de {{ book.copies if book.copies is not none else 1 }}</p>
 			{% if config.customFieldName1|length > 0 %}	
 <p><strong>{{config.customFieldName1}}</strong>:  {{book.customField1}}</p>
 	{% endif %}
@@ -39,7 +37,7 @@
 	<div style= "display:block; clear:both;float:none;">
 		
 		{% if config.coverImages %}	
-<h3 style="margin-top:25px;"><strong><u>Cover Images</strong></u></h3>		
+<h3 style="margin-top:25px;"><strong><u>Imágenes de portada</strong></u></h3>		
 
 <div style = "margin-top:20px;margin-bottom:20px;">
 			{% if images %}
@@ -53,40 +51,60 @@
 	{% endif %}	
 	<div style= "display:block; clear:both;float:none;">
 	<hr>
-			<h3><strong><u>Checkout</strong></u></h3>
+			<h3><strong><u>Préstamo</strong></u></h3>
 			{% if user.isAdmin %}
-				{% if book.withdrawn %}
-					<p>This book is on loan to <strong>{{ book.withdrawnBy }}</strong>.</p>
-					<a style="border:none; margin-right:25px;" href="/return/{{book.id}}"><button>Return</button></a>
-				{% else %}
-					<p>Assign this physical copy to a local patron at the desk.</p>
+				{% set disponibles = book.available if book.available is not none else (0 if book.withdrawn else 1) %}
+				{% if loans %}
+					<p>Ejemplares prestados:</p>
+					<ul>
+					{% for loan in loans %}
+						<li>{{ loan.username }} — <a href="/returnLoan/{{ loan.id }}">Devolver esta copia</a></li>
+					{% endfor %}
+					</ul>
+				{% endif %}
+				{% if disponibles > 0 %}
+					<p>Hay {{ disponibles }} copia(s) en el estante. La persona facilitadora presta una en el mostrador.</p>
 					{% if patrons %}
 					<form action="/withdraw/{{book.id}}" method="post" style="margin-bottom:0;">
-						<label for="borrower">Patron</label>
+						<label for="borrower">Persona</label>
 						<select name="borrower" id="borrower" required>
-							<option value="" disabled selected>Select a patron</option>
+							<option value="" disabled selected>Seleccione a la persona</option>
 							{% for patron in patrons %}
-							<option value="{{ patron.username }}">{{ patron.username }}</option>
+							<option value="{{ patron.username }}">{{ patron.displayName }}</option>
 							{% endfor %}
 						</select>
-						<input type="submit" value="Check out" style="margin-top:15px;">
+						<input type="submit" value="Prestar" style="margin-top:15px;">
 					</form>
 					{% else %}
-					<p>No local patrons yet. <a href="/userManagement">Add a patron</a> first.</p>
+					<p>Todavía no hay personas registradas. <a href="/userManagement">Registre a una persona</a> primero.</p>
 					{% endif %}
+				{% else %}
+					<p>No quedan copias disponibles.</p>
+				{% endif %}
+			{% elif config.patronSelfService %}
+				{% if book.withdrawn and book.withdrawnBy == user.username %}
+					<p>Usted tiene este libro en préstamo.</p>
+					<a style="border:none; margin-right:25px;" href="/return/{{book.id}}"><button>Devolver</button></a>
+				{% elif not book.withdrawn %}
+					<form action="/withdraw/{{book.id}}" method="post">
+						<input type="hidden" name="borrower" value="{{ user.username }}">
+						<input type="submit" value="Solicitar préstamo">
+					</form>
+				{% else %}
+					<p>Este libro ya está prestado.</p>
 				{% endif %}
 			{% else %}
 				{% if book.withdrawn %}
-					<p>This book is on loan to <strong>{{ book.withdrawnBy }}</strong>. Ask a librarian to return it.</p>
+					<p>Este libro está prestado. La persona facilitadora lo recibe de vuelta en el mostrador.</p>
 				{% else %}
-					<p>Ask a librarian to check this book out for you.</p>
+					<p>El préstamo lo hace la persona facilitadora. Usted no solicita libros desde aquí.</p>
 				{% endif %}
 			{% endif %}
 			
      </div>  
 	<div style= "display:block; clear:both;float:none;">
-		<h3 style="margin-top:25px; margin-bottom:0px;"><strong><u>Reading List</strong></u></h3>
-		<a style="border:none;margin-right:25px;" href="/read/{{book.id}}"><button style="margin-top:20px;">Add to Reading List</button></a><a style="border:none;" href="/unread/{{book.id}}"><button style="margin-top:20px;">Remove from Reading List</button></a>
+		<h3 style="margin-top:25px; margin-bottom:0px;"><strong><u>Lista de lectura</strong></u></h3>
+		<a style="border:none;margin-right:25px;" href="/read/{{book.id}}"><button style="margin-top:20px;">Agregar a la lista</button></a><a style="border:none;" href="/unread/{{book.id}}"><button style="margin-top:20px;">Quitar de la lista</button></a>
 	</div>
     </div>
       <!-- more table rows here -->
@@ -94,47 +112,47 @@
 
 
 	{% if user.isAdmin %}
-			<button class="accordion" style="margin-top:40px;">Admin Actions</button>
+			<button class="accordion" style="margin-top:40px;">Acciones de administración</button>
 			<div class="panel">
-			<a style="border:none; margin-right:25px;margin-right:25px;" href="/update_book/{{book.id}}"><button>Update</button></a>
-			<a class="confirm" style="border:none;" href="/delete_book/{{book.id}}" onclick="if (!confirm('Are you sure?')) return false;"><button style="margin-top:30px;">Delete</button></a>
+			<a style="border:none; margin-right:25px;margin-right:25px;" href="/update_book/{{book.id}}"><button>Actualizar</button></a>
+			<a class="confirm" style="border:none;" href="/delete_book/{{book.id}}" onclick="if (!confirm('¿Confirma que desea eliminarlo?')) return false;"><button style="margin-top:30px;">Eliminar</button></a>
 		    	{% if config.coverImages %}	
 		
 				
 		{% if images %}
-<h3 style="margin-top:25px;"><strong><u>Book Image Management</strong></u></h3>
+<h3 style="margin-top:25px;"><strong><u>Imágenes del libro</strong></u></h3>
 <div style = "margin-top:20px;margin-bottom:20px;">
 		{% for image in images %}
 <div style="float:left;">
 <a style = "border:none; margin-right:10px;" href ="{{ url_for('static', path='bookImages')}}/{{ image.filename }}.jpg" target=”_blank”><img src="{{ url_for('static', path='bookImages')}}/{{ image.filename }}_thumbnail.jpg"></a>
-<form action="/deleteImage/{{ image.id }}" method="post" ><button type="submit" style ="clear:both; display:block; float:none; line-height:0.5em; height:1.5em; padding: 0 1em 0 1em; margin:auto;" onclick="if (!confirm('Are you sure?')) return false;">Delete</button></form>
+<form action="/deleteImage/{{ image.id }}" method="post" ><button type="submit" style ="clear:both; display:block; float:none; line-height:0.5em; height:1.5em; padding: 0 1em 0 1em; margin:auto;" onclick="if (!confirm('¿Confirma que desea eliminarla?')) return false;">Eliminar</button></form>
 </div>
 		{% endfor %}
 </div>
 <div style ="clear:both; display:block; float:none; margin-top: 20px;">
 <form action="/upload/{{ book.id }}" method="post" enctype="multipart/form-data">
         <!-- File input field -->
-        <label style ="padding-top: 20px;" for="file">Upload another image: </label>
+        <label style ="padding-top: 20px;" for="file">Subir otra imagen: </label>
         <input type="file" id="file" name="file" accept="image/jpeg" required>
  
         <br><br>
          
         <!-- Submit button -->
-        <input type="submit" value="Upload">
+        <input type="submit" value="Subir">
     </form>
 </div>
 </div>
 		{% else %}
-<p>No images exist for this book.</p>
+<p>Este libro no tiene imágenes.</p>
 <form action="/upload/{{ book.id }}" method="post" enctype="multipart/form-data">
         <!-- File input field -->
-        <label for="file">Upload an image: </label>
+        <label for="file">Subir una imagen: </label>
         <input type="file" id="file" name="file" accept="image/jpeg" required>
  
         <br><br>
          
         <!-- Submit button -->
-        <input type="submit" value="Upload">
+        <input type="submit" value="Subir">
     </form>
 		{% endif %}
 	{% endif %}

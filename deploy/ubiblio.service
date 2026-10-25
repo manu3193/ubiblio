@@ -1,0 +1,16 @@
+[Unit]
+Description=uBiblio
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/home/pi/ubiblio
+ExecStart=/usr/bin/docker compose -f /home/pi/ubiblio/docker-compose.lan.yml up -d --remove-orphans
+ExecStop=/usr/bin/docker compose -f /home/pi/ubiblio/docker-compose.lan.yml stop
+TimeoutStartSec=300
+
+[Install]
+WantedBy=multi-user.target

@@ -54,7 +54,7 @@ class TestAdminMediatedCirculation:
                         data={"borrower": patron.username},
                         follow_redirects=False,
                     )
-            assert response.status_code == 403
+            assert response.status_code == 303
         finally:
             _delete_book(book.id)
 

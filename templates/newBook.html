@@ -9,29 +9,29 @@
 {% for error in errors %}
     <p style="color: red">{{ error }}</p>
 {% endfor %}
-<h1>Add a New Book</h1>
+<h1>Agregar un libro</h1>
 {% if addISBN %} 
-<a style ="text-decoration:none !important; border:none;" onclick = "document.bookExistsAdder.action = '/addanotherisbn';document.bookExistsAdder.submit();"><button>Approve & Add Another</button></a>
-<a style ="text-decoration:none !important; border:none;" onclick = "document.bookExistsAdder.action = '/scananotherisbn';document.bookExistsAdder.submit();"><button>Approve & Scan Another</button></a>
+<a style ="text-decoration:none !important; border:none;" onclick = "document.bookExistsAdder.action = '/addanotherisbn';document.bookExistsAdder.submit();"><button>Aprobar y agregar otro</button></a>
+<a style ="text-decoration:none !important; border:none;" onclick = "document.bookExistsAdder.action = '/scananotherisbn';document.bookExistsAdder.submit();"><button>Aprobar y escanear otro</button></a>
 {% endif %}
 {% if book %} 									
 <form id ="bookExistsAdder" name = "bookExistsAdder" action="/add_book" method="post">
 <div style="display:block; clear:both; float:none;">
 <div style="width:30%; min-width: 300px; float:left; margin-right:30px;">
     <p>
-        <p><label for="">Title</label></p>
+        <p><label for="">Título</label></p>
         <input type="text" name="title" value="{{ book.title }}" required>
     </p>
     <p>
-        <p><label for="">Author</label></p>
+        <p><label for="">Autor</label></p>
         <input type="text" name="author" value="{{ book.author }}">
     </p>
     <p>
-        <p><label for="">Summary</label></p>
+        <p><label for="">Resumen</label></p>
         <input type="text" name="summary" value="{{ book.summary }}">
     </p>
     <p>
-        <p><label for="">Genre</label></p>
+        <p><label for="">Género</label></p>
         <select name="genre" id="genre">
 					<option value="Uncategorized" selected="selected">Uncategorized</option>
 					{% for genre in config.genres.split(",") %}
@@ -39,12 +39,16 @@
 					{% endfor %}
 				</select>
     </p>
-<p><label for="">eBook</label></p>
+{% if config.ebooksEnabled %}
+<p><label for="">Libro electrónico</label></p>
 <select name="ebook" id="ebook">
-  <option value="True">True</option>
-  <option value="False" selected="selected">False</option>
+  <option value="True">Sí</option>
+  <option value="False" selected="selected">No</option>
 </select>
     </p>
+{% else %}
+<input type="hidden" name="ebook" value="False">
+{% endif %}
 				
 {% if config.customFieldName1|length > 0 %}	
 <p><label for="">{{ config.customFieldName1 }}</label></p>
@@ -59,17 +63,17 @@
             </div>
     <div style="width:30%; min-width: 300px; float:left;">
     <p>
-        <p><label for="">Library</label></p>
+        <p><label for="">Biblioteca</label></p>
         <input type="text" name="library" value="{{ library }}">
     </p>
 
     <p>
-        <p><label for="">Location</label></p>
+        <p><label for="">Ubicación</label></p>
         <input type="text" name="shelf" value="{{ shelf }}" >
     </p>
 
     <p>
-        <p><label for="">Collection</label></p>
+        <p><label for="">Colección</label></p>
         <input type="text" name="collection" value="{{ collection }}" >
     </p>
     <p>
@@ -77,19 +81,19 @@
         <input type="text" name="ISBN" value="{{ book.ISBN }}" >
     </p>
     <p>
-        <p><label for="">Notes</label></p>
+        <p><label for="">Notas</label></p>
         <input type="text" name="notes" value="{{ notes }}" >
     </p>
     
         <p>
-        <p><label for="">Owned</label></p>
+        <p><label for="">En la biblioteca</label></p>
 <select name="owned" id="owned">
   <option value="True">True</option>
   <option value="False">False</option>
 </select>
     </p>
 <p>
-        <p><label for="">Withdrawn</label></p>
+        <p><label for="">Prestado</label></p>
         <select name="withdrawn" id="withdrawn">
 			<option value="False">False</option>
   <option value="True">True</option>
@@ -100,29 +104,30 @@
 
     </div>
     </div>
-    <input style= "display:block; clear:both;float:none;" type="submit" value="Submit">
+    <input style= "display:block; clear:both;float:none;" type="submit" value="Guardar">
     
 </form>
 {% endif %}
 
-{% if not book %} 
+{% if not book %}
+<p><a style="text-decoration:none !important; border:none;" href="/importBooks"><button type="button">Cargar Excel</button></a></p>
 <form action="/add_book" method="post">
 <div style="display:block; clear:both; float:none;">
 <div style="width:30%; min-width: 300px; float:left; margin-right:30px;">
     <p>
-        <p><label for="">Title</label></p>
+        <p><label for="">Título</label></p>
         <input type="text" name="title" value="{{ title }}" required>
     </p>
     <p>
-        <p><label for="">Author</label></p>
+        <p><label for="">Autor</label></p>
         <input type="text" name="author" value="{{ author }}">
     </p>
     <p>
-        <p><label for="">Summary</label></p>
+        <p><label for="">Resumen</label></p>
         <input type="text" name="summary" value="{{ summary }}">
     </p>
     <p>
-        <p><label for="">Genre</label></p>
+        <p><label for="">Género</label></p>
         <select name="genre" id="genre">
 			<option value="Uncategorized" selected="selected">Uncategorized</option>
 			{% for genre in config.genres.split(",") %}
@@ -130,12 +135,16 @@
 			{% endfor %}
 </select>
     </p>
-        <p><label for="">eBook</label></p>
+        {% if config.ebooksEnabled %}
+<p><label for="">Libro electrónico</label></p>
 <select name="ebook" id="ebook">
-  <option value="True">True</option>
-  <option value="False" selected="selected">False</option>
+  <option value="True">Sí</option>
+  <option value="False" selected="selected">No</option>
 </select>
     </p>
+{% else %}
+<input type="hidden" name="ebook" value="False">
+{% endif %}
 {% if config.customFieldName1|length > 0 %}	
 <p><label for="">{{ config.customFieldName1 }}</label></p>
         <input type="text" name="customField1" value="{{ customField1 }}">
@@ -149,17 +158,17 @@
             </div>
     <div style="width:30%; min-width: 300px; float:left;">
     <p>
-        <p><label for="">Library</label></p>
+        <p><label for="">Biblioteca</label></p>
         <input type="text" name="library" value="{{ library }}">
     </p>
 
     <p>
-        <p><label for="">Location</label></p>
+        <p><label for="">Ubicación</label></p>
         <input type="text" name="shelf" value="{{ shelf }}" >
     </p>
 
     <p>
-        <p><label for="">Collection</label></p>
+        <p><label for="">Colección</label></p>
         <input type="text" name="collection" value="{{ collection }}" >
     </p>
     <p>
@@ -167,19 +176,19 @@
         <input type="text" name="ISBN" value="{{ ISBN }}" >
     </p>
     <p>
-        <p><label for="">Notes</label></p>
+        <p><label for="">Notas</label></p>
         <input type="text" name="notes" value="{{ notes }}" >
     </p>
     
         <p>
-        <p><label for="">Owned</label></p>
+        <p><label for="">En la biblioteca</label></p>
 <select name="owned" id="owned">
   <option value="True">True</option>
   <option value="False">False</option>
 </select>
     </p>
 <p>
-        <p><label for="">Withdrawn</label></p>
+        <p><label for="">Prestado</label></p>
 <select name="withdrawn" id="withdrawn">
 	<option value="False">False</option>
   <option value="True">True</option>
@@ -189,7 +198,7 @@
 
     </div>
     </div>
-    <input style= "display:block; clear:both;float:none;" type="submit" value="Submit">
+    <input style= "display:block; clear:both;float:none;" type="submit" value="Guardar">
     
 </form>
 <a style ="text-decoration:none !important; border:none;" href="/addisbn"><button>Add by ISBN</button></a>

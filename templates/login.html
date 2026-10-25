@@ -7,21 +7,21 @@
 <section id="two">
 	<div class="inner" style = "padding: 20px 0 1em 0;">
 		<header class="major">
-			<h2>Log In</h2>
+			<h2>Iniciar sesión</h2>
 		</header>
 		{% for error in errors %}
 		    <p style="color: red">{{ error }}</p>
 		{% endfor %}
 		<form action="/auth/login" method="post">
 			<p>
-			    <p><label for="">Username</label></p>
+			    <p><label for="">Usuario</label></p>
 			    <input type="text" name="username" value="{{ username }}" required>
 			</p>
 			<p>
-			    <p><label for="">Password</label></p>
+			    <p><label for="">Contraseña</label></p>
 			    <input type="password" name="password" value="{{ password }}" required>
 			</p>
-			<input type="submit" value="Submit">
+			<input type="submit" value="Entrar">
 		</form>
 	</div>				
 </section>

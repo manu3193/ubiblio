@@ -19,9 +19,9 @@ class LoginForm:
 
     async def is_valid(self):
         if not self.username:
-            self.errors.append("Please enter your username")
+            self.errors.append("Escriba el usuario")
         if not self.password or not len(self.password) >= 3:
-            self.errors.append("A valid password is required")
+            self.errors.append("La contraseña debe tener al menos 3 caracteres")
         if not self.errors:
             return True
         return False
@@ -126,6 +126,9 @@ class configForm:
         self.customFieldName1: Optional[str] = None
         self.customFieldName2: Optional[str] = None
         self.genres: str = ""
+        self.patronSelfService: bool = False
+        self.ebooksEnabled: bool = False
+        self.theme: str = "light"
 
     async def load_data(self):
         form = await self.request.form()
@@ -134,6 +137,9 @@ class configForm:
         self.customFieldName1 = form.get("customFieldName1")
         self.customFieldName2 = form.get("customFieldName2")
         self.genres = form.get("genres") or ",".join(schemas.DEFAULT_GENRES)
+        self.patronSelfService = str(form.get("patronSelfService")).lower() == "true"
+        self.ebooksEnabled = str(form.get("ebooksEnabled")).lower() == "true"
+        self.theme = "dark" if form.get("theme") == "dark" else "light"
 
     async def is_valid(self):
         if not self.version:

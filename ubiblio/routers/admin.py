@@ -11,6 +11,7 @@ import json
 import aiofiles
 
 from .. import crud, models, schemas
+from ..spreadsheet import read_table
 from ..database import SessionLocal
 from ..dependencies import (
     get_rate_limiter, templates, CHUNK_SIZE,
@@ -284,8 +285,12 @@ async def update_config(request: Request, user: admin_user):
         await form.load_data()
         if await form.is_valid():
             db = SessionLocal()
-            config = schemas.config(id=1, version=form.version, coverImages=form.coverImages,
-                                    customFieldName1=form.customFieldName1, customFieldName2=form.customFieldName2, genres=form.genres)
+            config = schemas.config(
+                id=1, version=form.version, coverImages=form.coverImages,
+                customFieldName1=form.customFieldName1, customFieldName2=form.customFieldName2,
+                genres=form.genres, patronSelfService=form.patronSelfService,
+                ebooksEnabled=form.ebooksEnabled, theme=form.theme,
+            )
             crud.updateConfig(db, config)
             config = crud.getConfig(db)
             db.close()
@@ -301,48 +306,150 @@ async def update_config(request: Request, user: admin_user):
 
 
 # --------------------------------------------------------------------------
+# Excel catalog
+# --------------------------------------------------------------------------
+@router.get("/importBooks", dependencies=[get_rate_limiter(times=2, seconds=2)], response_class=HTMLResponse)
+def import_books_page(request: Request, user: admin_user):
+    return templates.TemplateResponse(request, "importBooks.html", {
+        "request": request,
+        "user": user,
+        "errors": [],
+        "created": None,
+    })
+
+
+@router.post("/importBooks", dependencies=[get_rate_limiter(times=1, seconds=5)], response_class=HTMLResponse)
+async def import_books(request: Request, file: UploadFile, user: admin_user):
+    errors = []
+    created = updated = skipped = None
+    filename = file.filename or ""
+    try:
+        payload = await file.read()
+        rows = read_table(filename, payload)
+        db = SessionLocal()
+        try:
+            created, updated, skipped = crud.import_catalog(db, rows)
+        finally:
+            db.close()
+    except Exception as error:
+        errors.append(str(error))
+    return templates.TemplateResponse(request, "importBooks.html", {
+        "request": request,
+        "user": user,
+        "errors": errors,
+        "created": created,
+        "updated": updated,
+        "skipped": skipped,
+    })
+
+
+# --------------------------------------------------------------------------
 # User Management
 # --------------------------------------------------------------------------
-@router.get("/userManagement", dependencies=[get_rate_limiter(times=1, seconds=3)], response_class=HTMLResponse)
-async def user_management(request: Request, user: admin_user):
-    context = {
+PROVINCES = [
+    "San José", "Alajuela", "Cartago", "Heredia", "Guanacaste", "Puntarenas", "Limón",
+]
+
+
+def _user_management_context(request, user, errors, form_values=None):
+    db = SessionLocal()
+    try:
+        self_service = crud.patron_self_service_enabled(db)
+    finally:
+        db.close()
+    return {
         "user": user,
         "request": request,
-        "errors": [],
+        "errors": errors,
+        "provinces": PROVINCES,
+        "patronSelfService": self_service,
+        "form": form_values or {},
     }
-    return templates.TemplateResponse(request, "userManagement.html", context)
+
+
+def _slug_username(*parts: str) -> str:
+    import re
+    import unicodedata
+    text = ".".join(part.strip().lower() for part in parts if part and part.strip())
+    text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
+    text = re.sub(r"[^a-z0-9.]+", "", text).strip(".")
+    return text or "persona"
+
+
+@router.get("/userManagement", dependencies=[get_rate_limiter(times=1, seconds=3)], response_class=HTMLResponse)
+async def user_management(request: Request, user: admin_user):
+    return templates.TemplateResponse(request, "userManagement.html", _user_management_context(request, user, []))
 
 
 @router.post("/createLocalUser", dependencies=[get_rate_limiter(times=1, seconds=3)], response_class=HTMLResponse)
 async def create_local_user(request: Request, user: admin_user):
+    import secrets
     form = await request.form()
+    given_name = str(form.get("givenName") or "").strip()
+    surname1 = str(form.get("surname1") or "").strip()
+    surname2 = str(form.get("surname2") or "").strip()
+    province = str(form.get("province") or "").strip()
+    canton = str(form.get("canton") or "").strip()
+    district = str(form.get("district") or "").strip()
+    address = str(form.get("address") or "").strip()
+    phone = str(form.get("phone") or "").strip()
+    email = str(form.get("email") or "").strip()
     username = str(form.get("username") or "").strip()
     password = str(form.get("password") or "")
+    values = {
+        "givenName": given_name, "surname1": surname1, "surname2": surname2,
+        "province": province, "canton": canton, "district": district,
+        "address": address, "phone": phone, "email": email,
+    }
     errors = []
-    if not username:
-        errors.append("Username is required")
-    if not password or len(password) < 3:
-        errors.append("A password of at least 3 characters is required")
+    if given_name or not username:
+        for label, value in (
+            ("El nombre", given_name),
+            ("El primer apellido", surname1),
+            ("La provincia", province),
+            ("El cantón", canton),
+            ("El distrito", district),
+            ("La dirección exacta", address),
+            ("El teléfono", phone),
+        ):
+            if not value:
+                errors.append(f"{label} es obligatorio")
+        if email and "@" not in email:
+            errors.append("El correo electrónico no es válido")
+    elif not username:
+        errors.append("El nombre es obligatorio")
     db = SessionLocal()
     try:
+        self_service = crud.patron_self_service_enabled(db)
+        if self_service and given_name and (not password or len(password) < 3):
+            errors.append("Con el acceso en línea activo, la contraseña debe tener al menos 3 caracteres")
+        if not errors and given_name:
+            username = _slug_username(given_name, surname1, surname2)
+            base = username
+            suffix = 2
+            while crud.get_user_by_username(db, username) is not None:
+                username = f"{base}{suffix}"
+                suffix += 1
+        elif not errors and crud.get_user_by_username(db, username) is not None:
+            errors.append("Ese usuario ya existe")
+        if not errors and not password:
+            password = secrets.token_urlsafe(16)
+        if not errors and len(password) < 3:
+            errors.append("La contraseña debe tener al menos 3 caracteres")
         if not errors:
-            if crud.get_user_by_username(db, username) is not None:
-                errors.append("Username already exists, please choose another.")
+            created = crud.create_user(
+                db,
+                schemas.UserCreate(
+                    username=username, password=password, isAdmin=False, **values,
+                ),
+            )
+            if created is False:
+                errors.append("No se pudo registrar a la persona")
             else:
-                created = crud.create_user(
-                    db,
-                    schemas.UserCreate(username=username, password=password, isAdmin=False),
-                )
-                if created is False:
-                    errors.append("Could not create the local patron.")
-                else:
-                    return RedirectResponse(url='/userManagement', status_code=status.HTTP_303_SEE_OTHER)
-        context = {
-            "user": user,
-            "request": request,
-            "errors": errors,
-        }
-        return templates.TemplateResponse(request, "userManagement.html", context)
+                return RedirectResponse(url='/userManagement', status_code=status.HTTP_303_SEE_OTHER)
+        return templates.TemplateResponse(
+            request, "userManagement.html", _user_management_context(request, user, errors, values),
+        )
     finally:
         db.close()
 
@@ -390,8 +497,21 @@ async def user_delete(request: Request, userId: int, user: admin_user):
 def search_users(request: Request, user: admin_user, username: str = "%"):
     db = SessionLocal()
     try:
-        users = jsonable_encoder(crud.searchUsers(db, str(username)))
-        return json.dumps(users)
+        users = crud.searchUsers(db, str(username)) or []
+        payload = [
+            {
+                "id": person.id,
+                "username": person.username,
+                "isAdmin": person.isAdmin,
+                "displayName": person.displayName,
+                "phone": person.phone or "",
+                "email": person.email or "",
+                "canton": person.canton or "",
+                "district": person.district or "",
+            }
+            for person in users
+        ]
+        return json.dumps(payload)
     except Exception as e:
         print(e)
         return "User search failed."

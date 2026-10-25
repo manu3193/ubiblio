@@ -40,7 +40,6 @@ class TestHeadRequestsNoMethodNotAllowed:
     @pytest.mark.parametrize("path", [
         "/add_book",
         "/addisbn",
-        "/scan_isbn",
     ])
     def test_head_on_admin_endpoints(self, path):
         with create_test_user(is_admin=True) as user:

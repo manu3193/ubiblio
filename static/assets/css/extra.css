@@ -54,3 +54,238 @@ display:none;
 display:inline;
 }
 }
+
+/* Biblioteca JFA Heredia: negro y amarillo de La Jota y el Frente Amplio. */
+body,
+input,
+select,
+textarea {
+	font-family: Montserrat, "Source Sans 3", Helvetica, sans-serif;
+}
+
+body.theme-light,
+body.theme-light input,
+body.theme-light select,
+body.theme-light textarea {
+	background: #f3f3f3;
+	color: #313131;
+}
+
+body.theme-light h1,
+body.theme-light h2,
+body.theme-light h3,
+body.theme-light h4,
+body.theme-light h5,
+body.theme-light h6,
+body.theme-light strong,
+body.theme-light b,
+body.theme-light label {
+	color: #121212;
+}
+
+body.theme-light a:hover {
+	color: #121212 !important;
+	border-bottom-color: #ffc600;
+}
+
+body.theme-dark,
+body.theme-dark input,
+body.theme-dark select,
+body.theme-dark textarea {
+	background: #121212;
+	color: #f3f3f3;
+}
+
+body.theme-dark h1,
+body.theme-dark h2,
+body.theme-dark h3,
+body.theme-dark h4,
+body.theme-dark h5,
+body.theme-dark h6,
+body.theme-dark strong,
+body.theme-dark b,
+body.theme-dark label {
+	color: #f3f3f3;
+}
+
+body.theme-dark a:hover {
+	color: #ffc600 !important;
+	border-bottom-color: #ffc600;
+}
+
+#header {
+	background: #121212;
+	box-shadow: 0 4px 0 #ffc600;
+	height: 4.2em;
+	line-height: 4.2em;
+}
+
+#wrapper {
+	padding-top: 4.2em;
+}
+
+#header,
+#header a {
+	color: #ffc600;
+}
+
+#header .logo {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.55em;
+}
+
+#header .logo .brand-star {
+	width: 1.35em;
+	height: 1.35em;
+	fill: #ffc600;
+	flex: 0 0 auto;
+}
+
+#header .logo strong {
+	background: #ffc600;
+	color: #121212;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	margin-right: 0.35em;
+	padding: 0.15em 0.45em;
+}
+
+#header .logo:hover strong,
+#header .logo:active strong {
+	background: #ffc600;
+	color: #121212;
+}
+
+#header .logo span {
+	color: #ffc600;
+}
+
+#menu {
+	background: rgba(18, 18, 18, 0.96);
+}
+
+#menu a {
+	color: #ffc600;
+}
+
+#menu a:hover {
+	color: #ffffff !important;
+}
+
+#footer {
+	background: #121212;
+	color: #f3f3f3;
+	border-top: 4px solid #ffc600;
+}
+
+#footer a {
+	color: #ffc600;
+}
+
+body.theme-light input[type="text"],
+body.theme-light input[type="password"],
+body.theme-light input[type="email"],
+body.theme-light input[type="tel"],
+body.theme-light input[type="search"],
+body.theme-light input[type="url"],
+body.theme-light select,
+body.theme-light textarea {
+	background: #ffffff;
+	color: #121212;
+	border: 1px solid #d7d7d7;
+}
+
+body.theme-dark input[type="text"],
+body.theme-dark input[type="password"],
+body.theme-dark input[type="email"],
+body.theme-dark input[type="tel"],
+body.theme-dark input[type="search"],
+body.theme-dark input[type="url"],
+body.theme-dark select,
+body.theme-dark textarea {
+	background: #1c1c1c;
+	color: #f3f3f3;
+	border: 1px solid #3a3a3a;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="email"]:focus,
+input[type="tel"]:focus,
+input[type="search"]:focus,
+input[type="url"]:focus,
+select:focus,
+textarea:focus {
+	border-color: #ffc600;
+	box-shadow: 0 0 0 2px #ffc600;
+}
+
+body.theme-light select {
+	background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpath d='M9.4,12.3l10.4,10.4l10.4-10.4c0.2-0.2,0.5-0.4,0.9-0.4c0.3,0,0.6,0.1,0.9,0.4l3.3,3.3c0.2,0.2,0.4,0.5,0.4,0.9c0,0.4-0.1,0.6-0.4,0.9L20.7,31.9c-0.2,0.2-0.5,0.4-0.9,0.4c-0.3,0-0.6-0.1-0.9-0.4L4.3,17.3c-0.2-0.2-0.4-0.5-0.4-0.9c0-0.4,0.1-0.6,0.4-0.9l3.3-3.3c0.2-0.2,0.5-0.4,0.9-0.4S9.1,12.1,9.4,12.3z' fill='%23121212'/%3E%3C/svg%3E");
+}
+
+body.theme-dark select {
+	background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpath d='M9.4,12.3l10.4,10.4l10.4-10.4c0.2-0.2,0.5-0.4,0.9-0.4c0.3,0,0.6,0.1,0.9,0.4l3.3,3.3c0.2,0.2,0.4,0.5,0.4,0.9c0,0.4-0.1,0.6-0.4,0.9L20.7,31.9c-0.2,0.2-0.5,0.4-0.9,0.4c-0.3,0-0.6-0.1-0.9-0.4L4.3,17.3c-0.2-0.2-0.4-0.5-0.4-0.9c0-0.4,0.1-0.6,0.4-0.9l3.3-3.3c0.2-0.2,0.5-0.4,0.9-0.4S9.1,12.1,9.4,12.3z' fill='%23f3f3f3'/%3E%3C/svg%3E");
+}
+
+body.theme-light select option {
+	color: #121212;
+	background: #ffffff;
+}
+
+body.theme-dark select option {
+	color: #f3f3f3;
+	background: #1c1c1c;
+}
+
+input[type="submit"],
+input[type="reset"],
+input[type="button"],
+button,
+.button {
+	background: #ffc600;
+	box-shadow: none;
+	color: #121212;
+	font-weight: 700;
+}
+
+input[type="submit"]:hover,
+button:hover,
+.button:hover {
+	background: #121212;
+	color: #ffc600;
+	border-color: #ffc600;
+}
+
+body.theme-light table th {
+	color: #121212;
+}
+
+body.theme-light table tbody tr {
+	border-color: #e4e4e4;
+}
+
+body.theme-light table tbody tr:nth-child(2n + 1) {
+	background: #fff8dc;
+}
+
+body.theme-dark table th {
+	color: #ffc600;
+}
+
+body.theme-dark table td {
+	color: #f3f3f3;
+}
+
+body.theme-dark table tbody tr {
+	border-color: #3a3a3a;
+}
+
+body.theme-dark table tbody tr:nth-child(2n + 1) {
+	background: #1c1c1c;
+}
+
+table thead {
+	border-bottom-color: #ffc600;
+}
